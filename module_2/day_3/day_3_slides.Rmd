@@ -1,0 +1,568 @@
+---
+title: "Module 2"
+output:
+  beamer_presentation: default
+  ioslides_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size = "tiny", width = 50, fig.height = 3.5,
+                      fig.width = 5)
+library(tidyverse)
+library(stargazer)
+```
+
+# Day 3
+
+## Recap last week
+* "Joined" location and property data using the url column
+* Introduce `str_replace`, `str_split_fixed`, `str_trim`, and `str_to_upper` to clean variables in our data
+
+
+## Goals for Today
+
+R:
+
+* Finish cleaning current data
+* Motivate the use of user-created functions and "function safety"
+* Learn how to create functions
+* Create our own function to find the distance from each house to the nearest house
+
+Economics:
+
+* Take 
+* Begin exploring the relationshiop between distance from a metro stop and home prices
+
+## Cleaning zip-codes
+
+* Let's investigate our zip-code variable
+
+\scriptsize
+```{r, message=FALSE,eval=FALSE}
+dat_path <- ## Your file path here
+joined_data <- read_csv(paste0(dat_path,
+                               "joined_data.csv"))
+head(joined_data$ZIP_CODE)
+```
+
+```{r, message=FALSE,echo=FALSE}
+dat_path <- "~/Class_Materials/Spring_2018/module_2/day_3/"
+joined_data <- read_csv(paste0(dat_path,
+                               "joined_data.csv"))
+head(joined_data)
+```
+
+* We can see two big problems with our current data:
+    + Each zip-code has 4 extra zeros
+    + There are quotation marks around each observation
+
+## str_sub and str_length
+
+* `str_length()` tells us the number of characters in a string
+* `str_sub()` returns part of a text string between the start and end position provided
+```{r}
+str_length("Hello")
+str_sub("Hello", start = -1, end = 3)
+```
+
+## str_sub and str_length
+
+* `str_length()` is primarly used with other functions
+* We can combine both functions in order to extract the actual zip-code from our variable
+
+```{r}
+str_sub("'222040000", 2, 
+        str_length("'222040000") - 4)
+```
+
+* **Use dplyr and these new stringr functions to fix the rest of our zip-code data**
+
+```{r, echo = FALSE}
+joined_data <- joined_data %>% 
+    mutate(ZIP_CODE = str_sub(ZIP_CODE, 2,
+                      str_length(ZIP_CODE) - 4))
+```
+
+## Reviewing the Data
+
+* We'll start by looking at the head of the data
+```{r, echo = FALSE}
+joined_data %>% select(PRICE, SQUARE.FEET, LOT.SIZE) %>% head()
+```
+* We have a lot of NA values. Why is that?
+
+## Cleaning The Data
+* Let's get rid of the `NA` values by replacing them with square footage
+* We'll create a new column called Property Size that equals either lot size or square feet
+      + Use an `ifelse()` statement in our mutate, where we test whether lot size is `NA`
+      + If lot size is `NA`, use square feet. Otherwise, use lot size
+* Next we will summarize our data by price per foot of property size. 
+      + We want to group by property type and state!
+
+## Cleaning Code
+\scriptsize
+```{r}
+joined_data <- joined_data %>% 
+    mutate(PROPERTY.SIZE = ifelse(is.na(LOT.SIZE), SQUARE.FEET, LOT.SIZE))
+
+# Now we can find our average
+lot_state_data <- joined_data %>% 
+    group_by(PROPERTY.TYPE, STATE) %>% 
+    summarise(price = mean(PRICE/PROPERTY.SIZE, na.rm = TRUE))
+
+head(lot_state_data)
+```
+
+
+## Visualizing The Relationship
+* **Make a plot showing the average price per lot size for each property type in each state**
+
+```{r "Lot size plot answer", eval = FALSE, include = FALSE}
+lot_state_data %>% 
+    ggplot(aes(x =      , y =     , fill =     )) +
+    facet_wrap("PROPERTY.TYPE") +
+    geom_bar(stat = "identity", width = 0.5) +
+    labs(x = NULL,
+         title = "      ",
+         caption = "           ",
+         y = "         ")
+```
+
+## Finished Plot
+```{r, echo = FALSE, fig.width=4.5, fig.height=3}
+lot_state_data %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    facet_wrap("PROPERTY.TYPE") +
+    geom_bar(stat = "identity", width = 0.5) +
+    labs(x = NULL,
+         title = "Price per square foot of total property size",
+         caption = "Data from Redfin",
+         y = "USD/Sq ft.")
+```
+
+## Different Forms of Data
+* There are two types of data that we work with:
+    1. Long
+    2. Wide
+* Up until now we have been looking at only one format of data --- long type
+    + Much easier to manipulate and graph
+* Wide-form data is easier to see visually
+    + Generally used to display tables
+    
+## A Real Estate Example
+* Let's look at a toy example with data from Redfin
+```{r, warning=FALSE, message=FALSE}
+wide_data <- read_csv(paste0(dat_path,
+                               "wide_sample.csv"))
+```
+
+* Each observation is a property at every point in time for our data
+    + How is this different from an observation in our original data?
+    + If this data were in long form, how many columns would there be?
+
+## Converting Our Data
+\centerline{\includegraphics[height=3in]{spread_gather.png}}
+
+## gather()
+* `gather(data, key, value, ...)`
+    + Converts multiple columns from wide-format to long-format
+    + `key` - name of the variable you are trying to create
+    + `value` - variable that holds the values in the key variables
+    + Must specify which columns to use for the key
+```{r}
+long_data <- wide_data %>% 
+  gather(key = "year", value = "price", 5:11)
+```
+
+## spread()
+* `spread(data, key, value, ...)`
+    + Converts two columns from long-format to wide-format
+    + `key` - variable you wish to spread into multiple columns
+    + `value` - variable that holds the values that will be used by your new variables
+```{r}
+new_wide <- long_data %>%
+  spread(key = "year", value = "price")
+```
+
+## Other Uses
+* We can use our reshaping functions in conjunction with stargazer to produce good looking tables
+
+\scriptsize
+```{r, results='asis'}
+lot_state_data %>% 
+  spread(key = STATE, value = price) %>%
+  stargazer(summary = FALSE, 
+            header = FALSE,
+            type = "text")
+```
+## Reading In The Metro Station Data
+* Use this data in conjunction with the housing data to find the distance from a metro
+    + Includes latitude and longitude of each metro station
+* Unfortunately it is in an xlsx file so we can't use read_csv
+```{r, message=FALSE}
+metro_data <- read_xlsx(paste0(dat_path,
+                        "Metro_lat_lon.xlsx"), 
+                        sheet = 1)
+```
+* There is one big problem with finding the distance --- the calculation is fairly difficult
+    + We need to create a function!
+
+## What Is A Function
+* Piece of code that takes one or more inputs and returns one or more outputs
+* For example:
+    +  `min()` takes a vector of numbers and returns the number with the lowest value
+    +  `read_csv()` takes a string that contains a file path and returns a data.frame object
+* Some of inputs may have a default set value for certain arguments
+    + `min(..., na.rm = FALSE)`
+    
+## Writing A Function
+* Functions are extremely useful when you have to repeat a complex chunk of code
+    + Can be used in loops, if else statements, and even other functions
+* A user-defined function takes the following form:
+```{r, eval = FALSE}
+function_name <- function(arguments){
+  ## Code that does your task
+}
+```
+
+
+## Simple Examples
+* Here is a funciton for adding two numbers together:
+```{r}
+add <- function(num1, num2){
+    num1 + num2
+}
+add(num1 = 2,num2 = 5)
+```
+
+* **Create your own function that raises a number provided by the user to a power provided by the user. **
+
+```{r "In-class 2 Answer", echo=FALSE}
+exponent <- function(base, power){
+    base**power
+}
+```
+
+## Defaults
+* Use these when one option is used much more than any of the other options
+* For example `read_csv(..., col_names = TRUE)`
+    + read in the first row of the data as column names
+    + may also use `FALSE` or a vector of column names we would like to assign
+* Merely set one of our arguments equal to the default value
+```{r, eval = FALSE}
+root <- function(base, denom = 2){
+  base**(1/denom)
+}
+```
+
+## return()
+* Let's take a look the functions we created so far
+    + What do we input and what do we output?
+    + Is this completely clear from our code?
+* By default, a function returns the last object that was created
+    + Can be confusing when reading someone elses code
+* `return()` says I want the output of my function to be this value
+    + Only useable inside of a user-generated function
+    
+## A More Complex Example
+* We can use any of the coding structures we've already learned inside of our functions
+* Let's create a function that sums together the numbers in a vector
+```{r}
+vector_sum <- function(numeric_vector){
+    sum <- 0
+    for(number in numeric_vector){
+        sum <- sum + number
+    }
+    return(sum)
+}
+vector_sum(c(1,1,5,12))
+```
+
+## Another Complex Example
+* Let's find the minimum number in a vector
+```{r}
+vector_min <- function(numeric_vector){
+    m <- numeric_vector[1]
+    for(number in 2:length(numeric_vector)){ 
+        if(numeric_vector[number] < m){
+            m <- numeric_vector[number]
+        }
+    }
+    return(m)
+}
+
+test_vector <- c(1, 4, 6, -8, 0, 11)
+vector_min(test_vector)
+```
+
+## Another Complex Example
+
+**Now it's your turn. Write a function called vector_max which takes a numeric vector and returns the maximum element in it. Make sure to test out your function. **
+```{r "vector_max answer", echo = FALSE, include = FALSE}
+vector_max <- function(numeric_vector){
+    
+    m <- numeric_vector[1] # initialize our minimum to the first element
+    
+    for(i in 2:length(numeric_vector)){ 
+        # Now go through the rest of the vector
+        if(numeric_vector[i] > m){
+            m <- numeric_vector[i]
+        }
+    }
+    return(m)
+}
+test_vector <- c(1, 4, 6, -8, 0, 11)
+vector_max(test_vector)
+```
+
+## Rock, Paper, Scissors
+* Let's try using a more fun example now with a simple logic game
+```{r, eval = FALSE}
+
+RPS <- function(player1, player2){
+if(( player1 == "Rock" & player2 == "Scissors") | ( player1 == "Paper" & player2 == "Rock") | ( player1 == "Scissors" & player2 == "Paper")){
+        return("Player 1 Wins!")
+} else if(player1 == player2){
+    return("Tie game!")
+} else {
+    return("Player 2 Wins!")
+}
+}
+
+test <- RPS("Scissors", "Rock")
+
+test
+```
+
+**Fill in the logical arguments above. Create a function called RPS that uses the code as the body of the function and returns the results of the match.**
+
+## Returning to Metro Data
+* Remember, our goal is to calculate the nearest metro station
+    + Use our longitude and latitude data combined with a little trigonometry to find the distance
+    + Remember: $a^2 + b^2 = c^2$ or $\Delta longitude^2 + \Delta latitude^2 = distance^2$
+
+## Calculating Distance
+
+* Now that our data is numeric we can calculate the distance
+
+\scriptsize
+```{r}
+test_property <- joined_data[1, ]
+test_metro <- metro_data[1, ]
+
+delta_x <- test_property$LONGITUDE - test_metro$Longitude
+delta_y <- test_property$LATITUDE - test_metro$Latitude
+
+distance <- sqrt(delta_x**2 + delta_y**2)
+# One degree is equal to about 69 miles
+distance/69
+```
+
+## Basic Distance Function
+
+**Write a function that takes 4 arguments: property long and lat values, and metro long and lat values. The function should then calculate the pythagorean distance between the property and the metro in miles.**
+
+```{r, eval=FALSE}
+metro_dist <- function( , , , ){
+  
+  
+}
+```
+
+```{r, echo = FALSE}
+metro_dist <- function(prop_long, prop_lat, metro_long, metro_lat){
+  delta_x <-prop_long - metro_long
+  delta_y <- prop_lat - metro_lat
+
+  dist <- sqrt(delta_x**2 + delta_y**2)
+  miles <- dist/69
+  
+  return(miles)
+}
+```
+
+## Double checking the distance
+* Our test property is in Arlington and our test metro is in Maryland east of D.C.
+    + That's about 10 miles
+    + Why might our distance be incorrect?
+    
+## geosphere
+* We can't use the simple Pythagorean formula
+* `geosphere` is a package that allows us to easily work with geographic coordinates
+* `distHaversine()` calculates the shortest distance between two points
+    + Points must contain longitude AND latitude
+    + "As the crow flys"
+    + Default output is in meters
+```{r, message=FALSE}
+# install.packages("geosphere")
+library(geosphere)
+?distHaversine()
+```
+
+## Calculating distance
+```{r}
+prop_long_lat <- c(test_property$LONGITUDE,
+                   test_property$LATITUDE)
+metro_long_lat <- c(test_metro$Longitude,
+                    test_metro$Latitude)
+
+distance <- distHaversine(prop_long_lat, metro_long_lat)
+# There are 1609.344 meters in a mile
+distance/1609.344
+```
+
+* This looks much more realistic!
+
+## Every Metro Stop
+\scriptsize
+```{r, results='hide'}
+output_distances <- c()
+
+for(i in 1:nrow(metro_data)){
+    # Pull out our longitude and latitude values for the metro station
+    metro_long_lat <- c(metro_data$Longitude[i],
+                        metro_data$Latitude[i])
+    # Calculate the distance to our property
+    distance <- distHaversine(p1 = prop_long_lat, # from above
+                              p2 = metro_long_lat)
+    # append that distance to our distances vector
+    output_distances <- c(output_distances, distance)
+}
+
+output_distances
+```
+
+## Better Distance Function
+**Turn the code from the previous slide into a function called prop_metros_dist that does the following:**
+
+* **Finds the distance from a property to every metro station**
+* **Converts the distance from meters to miles**
+* **Returns the distance (in miles) of the closest metro station**
+
+```{r "prop_metro_answer", echo = FALSE, results='hide'}
+prop_metros_dist <- function(prop_long_lat, metro_data){
+    output_distances <- c()
+
+    for(metro in 1:nrow(metro_data)){
+        # Pull out our longitude and latitude values for the metro station
+        metro_long_lat <- c(metro_data$Longitude[metro],
+                            metro_data$Latitude[metro])
+        # Calculate the distance to our property
+        distance <- distHaversine(p1 = prop_long_lat,
+                                  p2 = metro_long_lat)
+        # append that distance to our distances vector
+        output_distances <- c(output_distances, distance)
+    }
+    return(min(output_distances)/1609.344)
+}
+
+prop_metros_dist(prop_long_lat, metro_data)
+```
+
+## Function safety
+* Functions help use improve readability and replicability of our code, but are not fool proof
+* People often input the wrong arguments or use functions in ways that weren't intended
+* Let's look at `prop_metros_dist()`:
+    + If a user doesn't recoginze `distHaversine()` is from the geosphere package, they may not install and load it
+    + It is our job as the programmer to address these types of concerns
+    
+## Functions for Function safety
+* `require()` --- works similarly to `library()`
+    + Designed to be used within other functions
+    + Returns `FALSE` if a package fales to load
+    + Can use this with if/else statements
+* `warning()` --- prints a warning message that we specify but DOES NOT stop the program
+* `stop()` --- prints an error message and stops the program
+
+## Function safety in Action
+\scriptsize
+```{r}
+prop_metros_dist <- function(prop_long_lat, metro_data){
+  
+  if(require(geosphere) != TRUE){ # what does require do?
+      warning("geosphere package is not installed")
+    } else{  
+  output_distances <- c()
+  for(i in 1:nrow(metro_data)){
+        metro_long_lat <- c(metro_data$Longitude[i],
+                            metro_data$Latitude[i])
+        distance <- distHaversine(p1 = prop_long_lat,
+                                  p2 = metro_long_lat)
+        output_distances <- c(output_distances, distance)
+    }
+
+    return(min(output_distances)/1609.344)
+    }
+}
+
+```
+
+## Wrapper Functions
+* Need a two-number vector with longitude and latitude but we have two columns in our data
+* A function that calls another function
+    + Generally pre-process inputs for other functions
+    + Improve readibility, ease of use, and our ability to implement changes
+    + `prop_metros_dist()` calls `dist_Haversine()`
+* Want to write a function that turns `LATITUDE` and `LONGITUDE` into a vector
+
+## Our Wrapper Function
+\scriptsize
+```{r}
+distance_function <- function(LONG, LAT, metro_df){
+    if(!require(geosphere)){ # what does require do?
+      warning("geosphere package is not installed")
+    } else{
+      # We need to turn our LONG and LAT columns into a vector
+      prop_long_lat <- c(LONG, LAT)
+      # Now call our prop_metros_dist function from above
+      out <- prop_metros_dist(prop_long_lat,
+                            metro_df)
+      return(out)
+    }
+}
+
+distance_function(joined_data$LONGITUDE[3],
+                  joined_data$LATITUDE[3],
+                  metro_data) 
+```
+
+## Finding the Closest Metro Station
+* **Combine our function with a loop to find the closest metro station to each property (Hint: Look at one of our previous functions) **
+```{r, eval = FALSE}
+joined_data$metro_distance <- NA #initialize the column
+for(){
+
+  ## Your code here
+  
+}
+
+
+```
+
+```{r,echo = FALSE, results = 'hide'}
+joined_data$metro_distance <- NA #initialize the column
+
+for(i in 1:nrow(joined_data)){
+    joined_data$metro_distance[i] <- 
+      distance_function(joined_data$LONGITUDE[i],                                                   joined_data$LATITUDE[i],
+                        metro_data)
+}
+head(joined_data$metro_distance)
+```
+
+
+## Graphing the Relationship
+
+```{r, echo = FALSE, eval = FALSE}
+joined_data <- joined_data %>% 
+    mutate(distance_tenth = round(metro_distance, 0.1))
+
+joined_data %>% group_by(distance_tenth) %>% 
+    summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T)) %>% 
+    ggplot(aes(x = distance_tenth, y = price)) +
+    geom_line() +
+    labs(title = "Price vs distance from metro station",
+         y = "USD/Sq ft.",
+         x = "Miles",
+         caption = "Data from Redfin and WMATA")
+```

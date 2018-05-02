@@ -1,0 +1,316 @@
+---
+title: "Day 3 Student"
+author: "Ian de Medeiros"
+date: "March 22, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(stargazer)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+
+## Cleaning the zip codes
+```{r}
+dat_path <- ## Your file path here
+  joined_data <- read_csv(paste0(dat_path,
+                                 "joined_data.csv"))
+head(joined_data$ZIP_CODE)
+```
+
+## str_sub() and str_length()
+```{r}
+str_length("Hello")
+str_sub("Hello", start = 2, end = 4)
+
+str_sub("'222040000", 2, 
+        str_length("'222040000") - 4)
+```
+
+## In-Class 1:
+
+Use dplyr and these new stringr functions to fix the rest of our zip-code data
+
+```{r}
+joined data <- # Your answer here
+```
+
+## Lot Size
+```{r}
+joined_data %>% select(PRICE, SQUARE.FEET, LOT.SIZE) %>% head()
+
+joined_data <- joined_data %>% 
+  mutate(PROPERTY.SIZE = ifelse(is.na(LOT.SIZE), SQUARE.FEET, LOT.SIZE))
+
+# Now we can find our average
+lot_state_data <- joined_data %>% 
+  group_by(PROPERTY.TYPE, STATE) %>% 
+  summarise(price = mean(PRICE/PROPERTY.SIZE, na.rm = TRUE))
+
+head(lot_state_data)
+```
+
+## In-Class 2:
+
+Make a plot showing the average price per lot size for each property type in each state
+
+```{r}
+lot_state_data %>% 
+  ggplot(aes(x =      , y =     , fill =     )) +
+  facet_wrap("PROPERTY.TYPE") +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = NULL,
+       title = "      ",
+       caption = "           ",
+       y = "         ")
+```
+
+## Wide-format Data
+```{r, warning=FALSE, message=FALSE}
+wide_data <- read_csv(paste0(dat_path,
+                               "wide_sample.csv"))
+```
+
+## spread() and gather()
+```{r}
+long_data <- wide_data %>% 
+  gather(key = "year", value = "price", 5:11)
+
+wide_data <- long_data %>%
+  spread(key = "year", value = "price")
+```
+
+## Other uses
+```{r}
+spread(key = STATE, value = price) %>%
+  stargazer(summary = FALSE, 
+            header = FALSE,
+            type = "text"")
+```
+
+## Metro Data
+```{r, message=FALSE}
+library(xlsx)
+metro_data <- read.xlsx(paste0(dat_path,
+                        "Metro_lat_lon.xlsx"), 
+                        sheetIndex = 1)
+```
+
+## Simple function
+```{r}
+add <- function(num1, num2){
+    num1 + num2
+}
+add(num1 = 2,num2 = 5)
+```
+
+## In-Class 3
+
+Create your own function that raises a number provided by the user to a power provided by the user.
+
+```{r}
+exponent <- function( , ){
+  # Your answer here
+}
+```
+
+## More complex examples
+```{r, eval = FALSE}
+root <- function(base, denom = 2){
+  base**(1/denom)
+}
+```
+
+```{r}
+vector_sum <- function(numeric_vector){
+    sum <- 0
+    for(number in numeric_vector){
+        sum <- sum + number
+    }
+    return(sum)
+}
+vector_sum(c(1,1,5,12))
+```
+
+```{r}
+vector_min <- function(numeric_vector){
+    m <- numeric_vector[1]
+    for(number in 2:length(numeric_vector)){ 
+        if(numeric_vector[number] < m){
+            m <- numeric_vector[number]
+        }
+    }
+    return(m)
+}
+
+test_vector <- c(1, 4, 6, -8, 0, 11)
+vector_min(test_vector)
+```
+
+## In-Class 4
+
+Now it's your turn. Write a function called vector_max which takes a numeric vector and returns the maximum element in it. Make sure to test out your function.
+
+```{r}
+vector_max <- function( ){
+  # Your answer here
+}
+```
+
+## In-Class 5
+
+Fill in the logical arguments above. Create a function called RPS that uses the code as the body of the function and returns the results of the match.
+
+```{r, eval = FALSE}
+if(( & ) | ( & ) | ( & )){
+        print("Player 1 Wins!")
+} else if (){
+    print("Tie game!")
+} else {
+    print("Player 2 Wins!")
+}
+```
+
+## Calculating Distance
+```{r}
+delta_x <- test_property$LONGITUDE - test_metro$Longitude
+delta_y <- test_property$LATITUDE - test_metro$Latitude
+
+distance <- sqrt(delta_x**2 + delta_y**2)
+# One degree is equal to about 69 miles
+distance/69
+```
+
+## In-Class 6
+
+Write a function that takes 4 arguments: property long and lat values, and metro long and lat values. The function should then calculate the pythagorean distance between the property and the metro in miles.
+
+```{r, eval=FALSE}
+metro_dist <- function( , , , ){
+  
+  
+}
+```
+
+## Ignoring the Flat Earth Hypothesis
+```{r, message=FALSE}
+# install.packages("geosphere")
+library(geosphere)
+?distHaversine()
+
+prop_long_lat <- c(test_property$LONGITUDE,
+                   test_property$LATITUDE)
+metro_long_lat <- c(test_metro$Longitude,
+                    test_metro$Latitude)
+
+distance <- distHaversine(prop_long_lat, metro_long_lat)
+# There are 1609.344 meters in a mile
+distance/1609.344
+```
+
+## Calculating the Distance from Every Metro Stop
+```{r}
+output_distances <- c()
+
+for(metro in 1:nrow(metro_data)){
+    # Pull out our longitude and latitude values for the metro station
+    metro_long_lat <- c(metro_data$Longitude[metro],
+                        metro_data$Latitude[metro])
+    # Calculate the distance to our property
+    distance <- distHaversine(p1 = prop_long_lat, # from above
+                              p2 = metro_long_lat)
+    # append that distance to our distances vector
+    output_distances <- c(output_distances, distance)
+}
+
+output_distances
+```
+
+## In-Class 7
+
+Turn the code from the previous slide into a function called prop_metros_dist that does the following:
+* Finds the distance from a property to every metro station
+* Converts the distance from meters to miles
+* Returns the distance (in miles) of the closest metro station
+
+```{r}
+prop_metros_dist <- function( , ){
+    output_distances <- c()
+    # Your anwser here
+}
+
+prop_metros_dist(prop_long_lat, metro_data)
+```
+
+## Function Safety
+
+```{r}
+prop_metros_dist <- function(prop_long_lat, metro_data){
+  
+  if(!require(geosphere)){ # what does require do?
+      warning("geosphere package is not installed")
+    } else{  
+  output_distances <- c()
+  for(i in 1:nrow(metro_data)){
+        metro_long_lat <- c(metro_data$Longitude[i],
+                            metro_data$Latitude[i])
+        distance <- distHaversine(p1 = prop_long_lat,
+                                  p2 = metro_long_lat)
+        output_distances <- c(output_distances, distance)
+    }
+
+    return(min(output_distances)/1609.344)
+    }
+}
+```
+
+## Our Wrapper Function
+```{r}
+distance_function <- function(LONG, LAT, metro_df){
+    if(!require(geosphere)){ # what does require do?
+      warning("geosphere package is not installed")
+    } else{
+      # We need to turn our LONG and LAT columns into a vector
+      prop_long_lat <- c(LONG, LAT)
+      # Now call our prop_metros_dist function from above
+      out <- prop_metros_dist(prop_long_lat,
+                            metro_df)
+      return(out)
+    }
+}
+
+distance_function(joined_data$LONGITUDE[3],
+                  joined_data$LATITUDE[3],
+                  metro_data) 
+```
+
+## In-Class 8
+
+Combine our function with a loop to find the closest metro station to each property (Hint: Look at one of our previous functions)
+
+```{r, eval = FALSE}
+joined_data$metro_distance <- NA #initialize the column
+for( )){
+
+  # Your answer here
+  
+}
+```
+
+## Graphing the Relationship
+
+```{r, echo = FALSE, eval = FALSE}
+joined_data %>% 
+    mutate(distance_tenth = round_any(metro_distance, 0.1))
+
+joined_data %>% group_by(distance_tenth) %>% 
+    summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T)) %>% 
+    ggplot(aes(x = distance_tenth, y = price)) +
+    geom_line() +
+    labs(title = "Price vs distance from metro station",
+         y = "USD/Sq ft.",
+         x = "Miles",
+         caption = "Data from Redfin and WMATA")
+```

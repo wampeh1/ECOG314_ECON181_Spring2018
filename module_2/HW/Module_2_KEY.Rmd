@@ -1,0 +1,1577 @@
+---
+title: "Module 2 Homework"
+author: "ADD IN YOUR NAME"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = F,
+                      fig.align = "center", fig.width = 6, fig.height = 4)
+options(width = 75)
+
+library(tidyverse)
+library(lubridate)
+library(stringr)
+library(scales)
+#setwd("~/FRB_Howard_Class/Spring_2018/module_2/HW/")
+```
+
+# Module 2 Homework Assignments
+
+*This module consists of 4 homework assignments and corresponds to assignments 6, 7, 8, and 9 of the semester.*
+
+__Remember to set eval to T and echo to T after you have answered a code chunk so that your code and plots will appear when you knit the document.__
+
+## Module 2 Homework Assignment 1
+
+### Question 1
+
+#### a) Please review the following functions shown in class today. You should use the help documentation for each function in answering these questions. To access the help use `?function` or help(function). Please describe the following for each function:
+
+* What are the inputs to the function?
+* What are the outputs from the function?
+* When is this function useful?
+
+Example Answer:
+
+* sum()
+    + The sum() function takes one or more vectors of numbers as an argument. Additionally, it accepts the na.rm argument which allows sum() to be used even when NA values are present.
+    + The output of the sum() function is a single number, the sum of all values contained in the inputs
+    + The function is useful when looking to find the sum of multiple numbers. It is also useful with TRUE/FALSE values.
+    
+
+Please discuss the following functions:
+
+* for
+* if
+* else
+* identical()
+* str_detect()
+
+
+#### b) This is a repeat of an in-class exercise from the Module 2 Day 1 lecture. If you have your code saved from class then you can just place it word for word. Create a loop that will take the square root of a positive number or give us an NA if the number is negative. Save the results in a vector you initialized outside of the loop.
+
+```{r, In-class, echo = F, eval= F}
+num_list <- c(4,169,-9,9,-144,0)
+
+## Initialize your vector
+
+for(){
+  if() {
+    ## code to be executed
+  } else {
+    ## code to be executed
+  }
+}
+```
+
+### Question 2
+
+For the rest of Assignment 1 we are going to be thinking about investing and retirement. 
+<!--Add motivation for why you should save for retirement etc...-->
+
+Let's think about things we could do with money we have left after we've paid our bills. Three main options we will be looking at today: 
+
+  + Savings account 
+  + Stock market 
+  + Bonds
+
+We are going to look at how the total value of our investment would change over a ten year period, starting with our savings account. Savings rates change, but over the last ten years they were very low. Let's say you have a 2% interest rate on your money. This means that every year you get 2% of the money you have in the bank added to your account.
+
+Let's look at a simple example, where we start with $100 in our savings account and grow it.
+
+```{r, echo = TRUE}
+# A = P(1+r*t)
+# where A = account balance, P = principal, r = interest rate, 
+# and t = periods of time (in this case, one year) 
+P = 100
+
+# After one year: 
+A = P*(1 + 0.02)
+
+print(A)
+```
+
+#### a) How much money did we make after one year?
+
+<!-- Answer Here -->
+
+#### b) Use a for loop to answer this: what would our account balance be after ten years, with an initial investment of $100 and interest rate of 2% annually? 
+
+__Hint: you will update the variable account_balance ten times.__
+
+```{r "day 1:question2b", echo = F, eval = F}
+# Set our initial account balance
+account_balance <- 100
+
+for(# go through the loop 10 times){
+  account_balance <- # update your old balance by the interest rate
+}
+print(account_balance)
+
+```
+
+You should get the following value:
+
+```{r "ANSWER KEY 1.2b", echo = F, eval = T}
+account_balance <- 100
+
+for(year in 1:10){
+    account_balance <- account_balance*(1 + 0.02)
+}
+print(account_balance)
+```
+
+#### c) How much money would we have in our account after ten years, if each month we add an additional $100 to our account? 
+
+
+```{r "day 1:question2c", echo = F, eval = F}
+# First we need to convert our interest rate to monthly
+monthly_interest_rate <- # annual rate divided by the number of months in a year
+
+# Now each month, in addition to earning interest on our principal, 
+# we also add another $100 to the account
+account_balance <- 100
+for(month in # Number of months in ten years ){
+    account_balance <- # Update the principal by the monthly interest rate
+    account_balance <-  # Add the monthly contribution to the balance
+}
+print(account_balance)
+```
+
+You should get the following value:
+
+```{r "ANSWER KEY 1.2c", eval = T, echo = F}
+# First we need to convert our interest rate to monthly
+monthly_interest_rate = 0.02/12
+
+# Now each month, in addition to earning interest on our principal, we also add another $100 to the account
+
+x <- 100
+for(i in 1:120){ # Number of months in ten years
+    x <- x * (1+monthly_interest_rate) # Add in the interest
+    x <- x + 100 # Add more principal
+}
+print(x)
+```
+
+#### d) How much of this account balance would be made from interest? 
+
+**Hint: figure out the amount of total deposits made and subtract that from the account balance.**
+
+```{r, echo = F, eval = F}
+# How much money from our paycheck did we deposit into our account?
+total_deposits <- 
+
+# How much money did we make on interest?
+
+```
+
+```{r "ANSWER KEY 1.2d", eval = F, echo = F}
+# How much money from our paycheck did we put into our account?
+100*120
+
+# How much money did we make on interest?
+x - (100*120)
+```
+
+### Question 3
+
+Now we are going to read in and clean some stock data. Later, we will build portfolios using this stock data to model your retirement savings!
+
+#### a) Read in the following files: AAPL.csv, FORD.csv, GE.csv, JPM.csv, EXC.csv and JCP.csv from the Hw_Data folder. List the column names of each dataset.
+
+
+```{r "day 1:question 3a", echo = F, eval = F}
+AAPL <- # code
+# Columns: 
+
+FORD <- # code
+# Columns: 
+  
+GE <- # code
+# Columns: 
+  
+JPM <- # code
+# Columns: 
+  
+JCP <- # code
+# Columns: 
+
+EXC <- # code
+# Columns: 
+```
+
+```{r "ANSWER KEY 1.3a", echo = F, eval = T, message = F}
+AAPL <- read_csv("Hw_Data/AAPL.csv")
+# Columns: date, close, volume
+
+FORD <- read_csv("Hw_Data/FORD.csv")
+# Columns: date, close, volume
+
+GE <- read_csv("Hw_Data/GE.csv")
+# Columns: date, close, volume, open, high, low
+
+JPM <- read_csv("Hw_Data/JPM.csv")
+# Columns: date, close, volume
+
+JCP <- read_csv("Hw_Data/JCP.csv")
+# Columns: date, close, volume
+
+EXC <- read_csv("Hw_Data/EXC.csv")
+# Columns: date, close, volume, open, high, low
+```
+
+
+#### b) Two of these data sets have columns that the others don't. Select out the columns that these datasets have, that are unlike the others.
+
+```{r "day 1: question 3b", echo = F, eval = F}
+# fill in
+```
+
+
+```{r "ANSWER KEY 1.3b", echo = F, eval = T}
+GE <- GE %>% select(-open, -high, -low)
+
+EXC <- EXC %>% select(-open, -high, -low)
+```
+
+#### c) Convert the date colums into a date object for each data frame.
+
+```{r "ANSWER KEY 1.3c", echo = F, eval = T}
+AAPL <- AAPL %>% mutate(date = as.Date(date, format = "%B %d, %Y"))
+FORD <- FORD %>% mutate(date = as.Date(date, format = "%b-%d-%Y"))
+GE <- GE %>% mutate(date = as.Date(date, format = "%m/%d/%Y"))
+JPM <- JPM %>% mutate(date = as.Date(date, format = "%a, %B %d, %Y"))
+JCP <- JCP %>% mutate(date = as.Date(date, format = "%m/%d/%Y"))
+EXC <- EXC %>% mutate(date = as.Date(date, format = "%m/%d/%Y"))
+```
+
+```{r, echo = F, eval = F}
+AAPL <- AAPL %>% mutate(# fill in)
+FORD <- FORD %>% mutate(# fill in)
+GE <- GE %>% mutate(# fill in)
+JPM <- JPM %>% mutate(# fill in)
+JCP <- JCP %>% mutate(# fill in)
+EXC <- EXC %>% mutate(# fill in)
+```
+
+#### d) Pick one stock other than AAPL and plot its close price over time. Be sure to include appropriate titles and labels.
+
+Your chart should look like this. 
+
+```{r "ANSWER KEY 1.3d", echo = F, eval = T}
+ggplot(AAPL, aes(x=date, y = close)) + 
+  geom_line(color = "dodgerblue4") +
+  scale_y_continuous("Closing Price", labels = dollar) +
+  labs(title = "Daily close price of AAPL stock",
+       x = "Year",
+       caption = "Data from NASDAQ")
+```
+
+#### e) What do you notice about the stock's trend over time? (Hint: talk about dips, highs, general trends.)
+
+## Module 2 Homework Assignment 2
+
+### Question 1
+
+Please review the following functions shown in class today. You should use the help documentation for each function in answering these questions. To access the help use `?function` or help(function). Please describe the following for each function:
+
+* What are the inputs to the function?
+* What are the outputs from the function?
+* When is this function useful?
+
+Example Answer:
+
+* sum()
+    + The sum() function takes one or more vectors of numbers as an argument. Additionally, it accepts the na.rm argument which allows sum() to be used even when NA values are present.
+    + The output of the sum() function is a single number, the sum of all values contained in the inputs
+    + The function is useful when looking to find the sum of multiple numbers. It is also useful with TRUE/FALSE.
+
+Please discuss the following functions:
+
+* %in%
+* left_join()
+* str_replace()
+* str_split_fixed()
+* str_trim()
+
+### Question 2
+
+#### Rerun your code from last week so that all of our data is clean before we start today.
+
+#### a) Using your FORD data set and the gather function, transform your close and volume columns so that have a key column called: "measure" and a value column called "amount". My example below uses the AAPL dataset.
+
+```{r "day 2: Question 2a", echo = F, eval = F}
+transformed_FORD <- # fill in
+```
+
+```{r "ANSWER KEY 2.2a", echo = F, eval = T}
+transformed_AAPL <- gather(AAPL, key = measure, value = amount)
+head(transformed_AAPL, 3)
+```
+
+#### b) Uh oh, our date values were transformed. What we wanted were three columns: date, measure, and value, but we only got two because we forgot to protect our date column. Using your FORD data, create transformed_FORD again but this time make sure that our date column is kept intact. 
+
+**Your answer should look like this, again, I am using the AAPL data set**
+*Hint: you will need to use the - sign*
+
+```{r "day 2 question 2b", echo = F, eval = F}
+transformed_FORD <- #fill in 
+```
+
+```{r "ANSWER KEY 2.2b", echo = F, eval = T}
+transformed_AAPL <- gather(AAPL, key = measure, value = amount, -date)
+head(transformed_AAPL, 3)
+```
+
+#### c) Part of why gather is so useful is that it makes plotting with ggplot really easy! Now that I have a single column with multiple measure variables, I can use it to control ggplot aesthetics, such as color. Using your new transformed_FORD data, make a plot similar to the one I am making with the AAPL data.
+
+```{r "day 2: question 2c", echo = F, eval = F}
+transformed_FORD %>% 
+  ggplot() # fill in
+```
+
+```{r "ANSWER KEY 2.2c", echo = F, eval = T}
+transformed_AAPL %>% 
+  ggplot(aes(x = date, color = measure, y = amount)) +
+  geom_line() +
+  labs(title = "AAPL close price and volume",
+       x = NULL,
+       y = "Units",
+       caption = "Data from NASDAQ")
+```
+
+#### d) What units should we use for the y-axis of our plot showing the closing price and volume? Does it make sense to have these two things plotted on the same chart?
+
+#### e) Just as before we used gather to transform our data from wide to long, we can also use spread() to transform our data from long to wide. Using spread() turn your long version of FORD, transformed_FORD back into the wide version of the data, your data set should be identical to the FORD data you started with.
+
+```{r "Day 2: Question 2e", echo = F, eval = F}
+
+```
+
+*Your output should look similar to mine*
+
+```{r "ANSWER KEY 2.2e", echo = F, eval = T}
+wide_AAPL <- spread(transformed_AAPL, key = measure, value = amount)
+head(wide_AAPL, 3)
+```
+
+
+### Question 3
+
+Now we are almost ready to join our data together. But if we do that with the data as it is, look what happens:
+ 
+```{r "day 2: question 3 EXAMPLE", echo = T}
+AAPL_FORD <- left_join(AAPL, FORD, by = c("date"))
+names(AAPL_FORD)
+```
+
+R saw that all the column names were the same, so it assigned its own! But we won't know which price belongs to which stock by just seeing x and y. So it's better to rename the columns ourselves *before* joining the data.
+
+#### a) Rename the `close` and `volume` columns to `AAPL_close`, `AAPL_volume`, etc. We leave `date` the same so that we can join on it later.
+
+```{r "day 2 : question 3a", echo = F, eval = F}
+names(AAPL) <- c("date", # fill in)
+names(FORD) <- c("date", # fill in)
+names(JPM) <- c("date", # fill in)
+names(GE) <- c("date", # fill in)
+names(JCP) <- c("date", # fill in)
+names(EXC) <- c("date", # fill in)
+```
+
+```{r "ANSWER KEY 2.3a", echo = F, eval = T}
+names(AAPL) <- c("date", "AAPL_close", "AAPL_volume")
+names(FORD) <- c("date", "FORD_close", "FORD_volume")
+names(JPM) <- c("date", "JPM_close", "JPM_volume")
+names(GE) <- c("date", "GE_close", "GE_volume")
+names(JCP) <- c("date", "JCP_close", "JCP_volume")
+names(EXC) <- c("date", "EXC_close", "EXC_volume")
+```
+
+#### b) Join all four data sets into one, and call it `stock_data`. Hint: you will have to use join multiple times.
+
+```{r "day 2: question 3b", echo = F, eval = F}
+AAPL_FORD <- # fill in 
+JPM_GE <- # fill in 
+JCP_EXC <- # fill in
+AP_FORD_JPM_GE <- # fill in
+
+stock_data <- # fill in  
+  
+head(stock_data)
+```
+
+```{r "ANSWER KEY 2.3b", echo = F, eval = T}
+AAPL_FORD <- left_join(AAPL, FORD, by = "date")
+JPM_GE <- left_join(JPM, GE, by = "date")
+JCP_EXC <- left_join(JCP, EXC, by = "date")
+
+AP_FORD_JPM_GE <- left_join(AAPL_FORD, JPM_GE, by = "date")
+stock_data <- left_join(AP_FORD_JPM_GE, JCP_EXC, by = "date")
+```
+
+
+### Question 4
+
+#### a) Select all of the close price columns from `stock_data` and use `gather()` to create a suitable data frame for plotting, with the columns **date, Stock, and Close**. Call the data frame `close_price_data`.
+
+```{r "day 2: question 4a", echo = F, eval = F}
+close_price_data <- stock_data %>% select(# fill in) %>% 
+  gather(key = , value = , -) # fill in the blanks
+
+head(close_price_data)
+```
+
+Here is an example of what your data should look like. 
+
+```{r "ANSWER KEY 2.4a", echo = F, eval = T }
+close_price_data <- stock_data %>% 
+  select(date, AAPL_close, FORD_close, 
+         JPM_close, GE_close, JCP_close, 
+         EXC_close) %>% 
+  gather(key = "Stock", value = "Close", -date)
+
+head(close_price_data)
+```
+
+#### b) We could plot our data as is, but the values in the `Stock` column are not very clean. Rename the values of the `Stock` column in `close_price_data` from, for example, AAPL_close to AAPL. Hint: consult your notes on `str_split_fixed()`.
+
+```{r "day 2: question 2.4b", echo = F, eval = F}
+close_price_data <- close_price_data %>% 
+  mutate(Stock = # fill in)
+
+head(close_price_data)
+```
+
+Here is an example of what your data should look like
+
+```{r "ANSWER KEY 2.4b", echo = F, eval = T}
+close_price_data <- close_price_data %>% 
+  mutate(Stock = str_split_fixed(Stock, "_", n = 4)[,1])
+
+head(close_price_data)
+```
+
+#### c) Let's plot our data, now that it's in gathered form. Reproduce the plot below, noting the labels and titles.
+
+```{r "day 2:question4c", echo = F, eval = F}
+close_price_plot <- # fill in
+
+close_price_plot
+```
+
+Here is what your plot should look like
+
+```{r "ANSWER KEY 2.4c", echo = F, eval = T}
+ggplot(close_price_data, aes(x=date, y=Close, color = Stock, linetype = Stock)) + 
+  geom_line() +
+  labs(title = "Daily closing prices for selected stocks",
+       subtitle = "2008-2017",
+       caption = "Data from NASDAQ") +
+  scale_y_continuous(labels = dollar)
+```
+
+#### d) What are your major takeaways from this chart? What stocks would you want in your retirement portfolio, if you were retiring in 2018? Did our stocks maintain their relative price order (were the stocks with the highest prices in 2008 still our highest priced stocks in 2018?)
+
+<!-- Answer here -->
+
+### Question 5: Adding bond data
+
+```{r "day 2: question 5a setup", echo = T, eval = T}
+bond_data <- read_csv("Hw_Data/bond_data.csv") %>%
+  mutate(date = as.Date(date, format = "%Y-%m-%d"))
+```
+
+#### a) What are the names of the two Bond funds we are looking at?
+
+```{r "day 2: question 5a", eval = F}
+
+```
+
+#### b) Join `close_price_data` with this bond data. (Hint: we are hoping to capture all of the rows in both datasets, so `left_join()` will not give the desired result.)
+
+```{r "Day 2: question 5b", echo = F, eval = F}
+stock_bond_data <- # fill in
+```
+
+
+```{r "ANSWER KEY 2.5b", echo = F, eval = T}
+stock_bond_data <- full_join(bond_data, close_price_data)
+```
+
+#### c) Create a dummy variable called `Bond` that equals TRUE if the Stock name refers to a bond, and FALSE otherwise. What will this variable be useful for?
+
+```{r "ANSWER KEY 2.5c", echo = F, eval = T}
+stock_bond_data <- stock_bond_data %>% mutate(Bond = ifelse(Stock == "BND" | Stock == "VBLTX", TRUE, FALSE))
+```
+
+#### d) Plot `stock_bond_data`, reproducing the chart below.
+
+```{r "day 2 question 5d", echo = F, eval = F}
+stock_bond_plot <- ggplot(# fill in ) +
+
+stock_bond_plot
+```
+
+
+```{r "ANSWER KEY 2.5d", echo = F, eval = T}
+ggplot(stock_bond_data, 
+       aes(x=date, y=Close, color=Stock, linetype = Bond)) + 
+  geom_line() +
+  labs(title = "Daily closing prices for selected stocks and bonds",
+       subtitle = "2008-2017",
+       x = "Year",
+       caption = "Data from NASDAQ") +
+  scale_y_continuous(labels = dollar)
+```
+
+
+
+## Module 2 Homework Assignment 3
+
+### Question 1
+
+Please review the following functions shown in class today. You should use the help documentation for each function in answering these questions. To access the help use `?function` or help(function). Please describe the following for each function:
+
+* What are the inputs to the function?
+* What are the outputs from the function?
+* When is this function useful?
+
+Example Answer:
+
+* sum()
+    + The sum() function takes one or more vectors of numbers as an argument. Additionally, it accepts the na.rm argument which allows sum() to be used even when NA values are present.
+    + The output of the sum() function is a single number, the sum of all values contained in the inputs
+    + The function is useful when looking to find the sum of multiple numbers. It is also useful with TRUE/FALSE values.
+
+Please discuss the following functions:
+
+* str_sub()
+* require()
+* warning()
+* stop()
+* range()
+
+###Question 2
+
+Now that we have all of data nicely cleaned and put together, it is time for us to use it so that we can analyze it to create our very own retirement strategies.
+
+#### a)
+We will need to look at monthly returns for each of our stocks and bond funds. To do this we will need our stock prices for only the last day of each month for which we have data. Using lubridate: create a year, a month, and a day column in our dataframe for each row which breaks out the components of our date columns.
+
+```{r "day 3: Question 2a", echo = F, eval=F}
+month_end <- stock_bond_data %>% mutate(year = # fill in
+                                        month = # fill in
+                                        day = # fill in
+)
+```
+
+Here is what your data should look like.
+
+```{r "ANSWER KEY 3.2a", echo = F, eval = T}
+month_end <- stock_bond_data %>% mutate(year = lubridate::year(date),
+                                        month = lubridate::month(date),
+                                        day = lubridate::day(date))
+
+head(month_end)
+```
+
+#### b) What is the last day of every month in which we have data for each stock or bond? Using our new year, month, and day columns and dplyr, add a new column: max_day which has the number of maximum day for each combination of year, month, and stock
+
+```{r "day 3: Question 2b", echo = F, eval = F}
+month_end <- month_end %>% 
+  group_by(#fill in)
+  mutate(# fill in)
+  ungroup()
+```
+
+Here is what your data should look like.
+
+```{r "ANSWER KEY 3.2b", echo = F, eval = T}
+month_end <- month_end %>% 
+  group_by(Stock, year, month) %>% 
+  mutate(max_day = max(day)) %>% 
+  ungroup()
+
+head(month_end)
+```
+
+#### c) Now that we know our last day of the month for which we have data for a given stock, we can use filter to only take our end of month data (rows where day = max_day) and then sort our data to be increasing (so that our last row is in 2017).
+
+Note: We only want data for full months, so make sure not to include January 2018 data
+
+```{r "day 3: Question 2c", echo = F, eval = F}
+month_end <- month_end %>% filter(# fill in) %>% 
+  select(date, Stock, Close, Bond) %>% 
+  arrange(date)
+```
+
+Here is what your data should look like.
+
+```{r "ANSWER KEY 3.2c", echo = F, eval = T}
+month_end <- month_end %>% 
+  filter(day == max_day & year < 2018) %>% 
+  select(-year, -month, -day, -max_day) %>% 
+  arrange(date)
+
+head(month_end)
+```
+
+#### d) Now that we have our month end values for each stock, we can find the growth percentage for each month using dplyr::lag function. Using group_by, mutate, dplyr::lag, and whatever else you need, find the growth in the closing price for each stock in each month.
+
+Note that growth is: (final_price/initial_price) - 1
+
+```{r "day 3: Question 2d", echo = F, eval = F}
+month_end <- month_end %>% group_by(# fill in) %>% mutate(growth = fill in)
+```
+
+Here is what the tail of your data should look like.
+
+```{r "ANSWER KEY 3.2d", echo = F, eval=T}
+month_end <- month_end %>% group_by(Stock) %>% 
+  mutate(growth = (Close/dplyr::lag(Close))-1)
+
+tail(month_end)
+```
+
+**The first month of data should all have NA values for growth, why?**
+
+<!-- Answer Here -->
+
+#### e) Remove the rows of our dataset with an NA value and then make a line chart showing the monthly growth values for stocks and bonds. Be sure to use appropriate labeling and add a line at 0 using geom_hline().
+
+```{r "day 3: Question 2e", echo = F, eval = F}
+growth_line_plot <- ggplot(# fill in)
+```
+
+```{r "ANSWER KEY 3.2e", echo = F, eval = T}
+month_end <- month_end %>% filter(!is.na(growth))
+growth_line_plot <- ggplot(month_end, 
+                           aes(x = date,
+                               y = growth,
+                               color = Stock)) +
+  geom_line() +
+  geom_hline(yintercept = 0) +
+  scale_x_date(NULL, date_breaks = "year", date_labels = "%Y") +
+  labs(title = "Selected stocks 2008-2017",
+       caption = "Data from NASDAQ",
+       y = "Monthly growth rate")
+growth_line_plot
+```
+
+What are your takeaways from this chart? Do any stocks seem consistently better than any other? Which one seems the most erratic?
+
+#### f) Why do we care about growth rates and not just the closing price values?
+
+<!-- Answer Here -->
+
+### Question 3
+
+#### It's time to build our retirement portfolio simulator. Let's start by trying to recreate what would happen if we invested in JCPenny in 2008.
+
+```{r "day 3: Question 3", echo = TRUE}
+# Pull out all the dates we will loop through
+dates <- unique(month_end$date)
+# Invest $100 at the beginning, no monthly contribution
+investment_value <- 100
+
+for(d in dates){
+  investment_value <- investment_value* (1 + month_end[month_end$date == d & 
+                                                        month_end$Stock == "JCP", "growth"])
+}
+names(investment_value) <- "Value"
+print(investment_value)
+
+```
+
+*Wow, what a terrible investment, our \$100 turned to \$7 in ten years!*
+
+#### a) One easy way we can make our code better is by getting rid of that whole month_end[month_end$date ... section. We can do this by making a function.
+
+Write a function: growth_finder with the following characteristics  
+
+* Inputs: date, stock symbol, reference table (use month_end)  
+* Output: growth value for a stock on a given date
+
+```{r "day 3: Question 3a", echo = F, eval = F}
+growth_finder <- function(date_val, symbol, reference_table){
+
+  # pull the value from our reference table
+  # Look at how we did this in our for loop above
+  val <- reference_table[# (match the correct date) &
+                         # (match the correct Stock symbol),
+                         # (name of column we want to pull)]
+  # transform our pulled value to numeric
+  val <- # fill in
+  # Return our pulled value
+  return(val)
+}
+
+```
+
+```{r "ANSWER KEY 3.3a", echo = F, eval = T}
+growth_finder <- function(date_val, symbol, reference_table){
+
+  # pull the value from our reference table
+  x <- reference_table[reference_table$date == date_val & reference_table$Stock == symbol,
+                       "growth"]
+  # make sure that our pulled value is numeric
+  x <- as.numeric(x)
+  # Return our pulled value
+  return(x)
+}
+
+```
+
+Test your function and make sure you get the same output:
+
+```{r, echo = T, eval = T}
+# Test the function, check the raw table to be sure you get the correct value
+growth_finder(as.Date("2008-12-31"),
+              "JCP",
+              month_end)
+```
+
+
+#### Let's re-envision our retirement forecasting loop with this new function
+
+```{r, echo = T}
+# Pull out all the dates we will loop through
+dates <- unique(month_end$date)
+# Invest $100 at the beginning, no monthly contribution
+investment_value <- 100
+
+for(d in dates){
+  investment_value <- investment_value* (1 + growth_finder(d, "JCP", month_end))
+}
+print(investment_value)
+
+```
+
+#### b) Now let's replace the right side of our for loop assignment statement: investment_value * (1 + ...) with a new function called: monthly_update
+
+* Inputs: investment_value at beginning of the month, all inputs to growth_finder
+* Outputs: investment value at end of month
+
+```{r "day 3: question 3b", echo = F, eval = F}
+monthly_update <- function(investment_value # fill in){
+                           
+```
+
+
+```{r "ANSWER KEY 3.3b", echo = F, eval = T}
+monthly_update <- function(investment_value, 
+                           date_val, 
+                           symbol, 
+                           reference_table){
+  return(investment_value * (1 + growth_finder(date_val, symbol, reference_table)))
+}
+
+```
+
+Check that you get the same result as I do:
+
+```{r, eval = T, echo = T}
+monthly_update(100, as.Date("2008-12-31"),
+               "JCP", month_end)
+```
+
+
+
+#### Let's envision our retirement loop with our new function now:
+
+```{r, echo = T}
+# Pull out all the dates we will loop through
+dates <- sort(unique(month_end$date))
+# Invest $100 at the beginning, no monthly contribution
+investment_value <- 100
+
+for(d in dates){
+  investment_value <- monthly_update(investment_value,
+                                     d, "JCP", month_end)
+}
+print(investment_value)
+```
+
+#### c) Using the code from above, fill in the below loop so that we can forecast for two stocks instead of just one
+
+```{r "day 3: question 3d", eval = F, echo = F}
+# Pull out all the dates we will loop through
+dates <- sort(unique(month_end$date))
+# Invest $100 at the beginning, no monthly contribution
+initial_value <- 100
+AAPL_share <- 0.5
+JCP_share <- 0.5
+
+JCP_value <- initial_value*JCP_share
+AAPL_value <- initial_value*AAPL_share
+
+for(d in dates){
+  JCP_value <- monthly_update(# fill in)
+  AAPL_value <- monthly_update(# fill in)
+}
+
+print(paste("our JCPenney value is", round(JCP_value, 2), "dollars and our Apple value is", round(AAPL_value, 2), "dollars."))
+```
+
+Your answer should look like the following:
+
+```{r "ANSWER KEY 3.3c", eval = T, echo = F}
+# Pull out all the dates we will loop through
+dates <- sort(unique(month_end$date))
+# Invest $100 at the beginning, no monthly contribution
+initial_value <- 100
+AAPL_share <- 0.5
+JCP_share <- 0.5
+
+JCP_value <- initial_value*JCP_share
+AAPL_value <- initial_value*AAPL_share
+
+for(d in dates){
+  JCP_value <- monthly_update(JCP_value, d, "JCP", month_end)
+  AAPL_value <- monthly_update(AAPL_value, d, "AAPL", month_end)
+}
+
+print(paste("our JCPenney value is", round(JCP_value, 2), 
+            "dollars and our Apple value is", round(AAPL_value, 2), "dollars."))
+```
+
+### Question 4
+
+####a) Instead of using a for loop, let's turn the code for question 3d into a function that also allows us to divide up our allocated contributions among our different stocks. Make sure that you get the same results as I do when you run the function:
+
+```{r "day 3:question4a", echo = F, eval = F}
+portfolio_finder <- function(ref_table, initial_allocation, 
+                             stock1_symbol, stock2_symbol, stock1_share,
+                             stock2_share){
+  # Find our dates
+  dates <- sort(unique(ref_table$date))
+  
+  # Set our initial investments, use what I did above in 3d for reference
+  stock1_value <- # fill in
+  stock2_value <- # fill in
+  # Loop through and grow our investments
+  for(d in dates){
+    stock1_value <- monthly_update(# fill in)
+    stock2_value <- monthly_update(# fill in)
+  }
+  print(paste("From our initial allocation of", initial_allocation,
+              "our investment in ", stock1_symbol, "is now worth", round(stock1_value),
+              "dollars and our investment in ", stock2_symbol, "is now worth", round(stock2_value),
+              "dollars. In total our portfolio is worth", round(stock1_value + stock2_value),
+              "dollars."))
+}
+
+portfolio_finder(month_end, 1000, "JCP", "AAPL", 0.5, 0.5)
+```
+
+```{r "ANSWER KEY 3.4a", echo = F, eval = T}
+portfolio_finder <- function(ref_table, initial_allocation, 
+                             stock1_symbol, stock2_symbol, stock1_share,
+                             stock2_share){
+  # Find our dates
+  dates <- sort(unique(ref_table$date))
+  
+  # Set our initial investments
+  stock1_value <- initial_allocation*stock1_share
+  stock2_value <- initial_allocation*stock2_share
+  # Loop through and grow our investments
+  for(d in dates){
+    stock1_value <- monthly_update(stock1_value, d, stock1_symbol, ref_table)
+    stock2_value <- monthly_update(stock2_value, d, stock2_symbol, ref_table)
+  }
+  cat("From our initial allocation of ", initial_allocation, 
+      "our investment in ", stock1_symbol,
+      "is now worth", round(stock1_value), "dollars and our investment in", stock2_symbol,
+      "is now worth", round(stock2_value), "dollars. In total our portfolio is worth",
+        round(stock1_value + stock2_value), "dollars.", sep = '\n')
+}
+```
+
+```{r "EXAMPLE CODE 3.3a", echo = T, eval = T}
+portfolio_finder(month_end, 1000, "JCP", "AAPL", 0.5, 0.5)
+```
+
+
+#### So, we've managed to update our portfolio_finder() function to work with 2 stocks, but in our data we have 8 different stocks! Instead of adding in more arguments to our function, we should create a single function to do all of the work for a single stock and then write a wrapper around it so that we can have that function do our work for all 8 stocks separately.
+
+#### Below I've written a function to do just that and incorporate monthly contributions into our investments
+
+**Remember, the initial value is how much we invest on the first day, while the monthly contribution is a fixed sum of money that we add to the investment portfolio each month.**
+
+* Inputs: stock symbol, reference table, initial investment, monthly allocation, share of contributions to be invested in that stock
+* Output: final value of our investment
+
+
+```{r, echo = F, eval = T}
+single_stock_value <- function(ref_table,
+                               initial_value,
+                               monthly_contribution,
+                               symbol,
+                               share){
+  
+  dates <- sort(unique(ref_table$date)) # vector of dates
+  value <- initial_value * share # initial investment value
+  
+  for(d in dates){
+    
+    value <- monthly_update(value, 
+                            d, 
+                            symbol,
+                            ref_table) + monthly_contribution*share
+  }
+  return(value)
+}
+
+# To test the function, uncomment the below code!
+# single_stock_value(month_end,
+#                    100,
+#                    20,
+#                    "JCP",
+#                    1)
+```
+
+#### b) Using our single_stock_value() function rewrite the portfolio_finder() function.
+
+Inputs: reference table, initial contribution, monthly contribution, vector of stock symbols, vector of allocation shares for initial/monthly contributions
+
+Output: Table showing the stocks invested in and their final values
+
+```{r "day 3: question 4b", echo = F, eval = F}
+portfolio_finder <- function(ref_table,
+                              initial_value,
+                              monthly_contribution,
+                              symbols,
+                              shares){
+  # initialize output data.frame
+  output_df <- data.frame("Name" = # fill in,
+                          "value" = NA) 
+  
+  for(i in 1:length(symbols)){
+    output_df[i, "value"] <- single_stock_value(# fill in)
+  }
+  return(output_df)
+}
+```
+
+```{r "ANSWER KEY 3.4b", echo = F, eval = T}
+portfolio_finder <- function(ref_table,
+                              initial_value,
+                              monthly_contribution,
+                              symbols,
+                              shares){
+
+  output_df <- data.frame("Name" = symbols,
+                          "value" = NA) # initialize output data.frame
+  
+  for(i in 1:length(symbols)){
+    output_df[i, "value"] <- single_stock_value(ref_table,
+                                           initial_value,
+                                           monthly_contribution,
+                                           symbols[i],
+                                           shares[i])
+  }
+  return(output_df)
+}
+
+```
+
+
+#### Test your function to be sure that you get the same results as I do.
+
+```{r "EXAMPLE CODE 3.4b", echo = T, eval = T}
+portfolio_finder(month_end, 100, 50, 
+                 c("BND", "VBLTX", "AAPL", "FORD", "JPM", "GE", "JCP", "EXC"), 
+                 c(0.05, 0.05, 0.3, 0.1, 0.1, 0.1, 0.1, 0.2))
+```
+
+#### c) Time to practice good function hygiene and update our portfolio_finder function. 
+
+* what value should all of our contribution shares add up to? Make sure that they do.
+
+
+```{r "day 3: question 4c", echo = F, eval = F}
+portfolio_finder <- function(ref_table,
+                              initial_value,
+                              monthly_contribution,
+                              symbols,
+                              shares){
+  
+  # Check that our share vector adds to the correct value
+  # FILL IN
+  
+  # Now paste in the rest of the code from your answer in 4b
+  
+}
+```
+
+
+```{r "ANSWER KEY 3.4c", echo = F, eval = T}
+portfolio_finder <- function(ref_table,
+                              initial_value,
+                              monthly_contribution,
+                              symbols,
+                              shares){
+
+  # Check that our shares add up to 1
+  if(sum(shares) != 1){
+    print("Share values do not add up to 1")
+    stop()
+  }
+  
+  output_df <- data.frame("Name" = symbols,
+                          "value" = NA) # initialize output data.frame
+  
+  for(i in 1:length(symbols)){
+    output_df[i, "value"] <- single_stock_value(ref_table,
+                                           initial_value,
+                                           monthly_contribution,
+                                           symbols[i],
+                                           shares[i])
+  }
+  return(output_df)
+}
+
+```
+
+
+Test that your version gives the same results as mine for the following call:
+
+
+```{r, echo = T, error = T}
+portfolio_finder(month_end, 1000, 500,
+                 c("BND", "VBLTX", "AAPL", "FORD", "JPM", "GE", "JCP", "EXC"),
+                 c(0.05, 0.05, 0.3, 0.1, 0.1, 0.1, 0.1, 0.2))
+```
+
+#### d) Now let's try creating some hypothetical portfolios to see how large your investments could have gotten.
+
+* Create 3 different portfolios, each with a \$100 initial contriubtion and a \$50 monthly contribution
+
+* For each portfolio you have to invest in at least 4 of the bonds or stocks and you can only put a maximum of 50% of your funds to any single stock/bond in your portfolio. (No, you can't only buy AAPL)
+
+* Of your fictional portfolios which one was worth the most in total value at the end of 10 years? Which one was worth the least? What was different about your best and worst portfolios?
+
+<!--
+
+This section has been commented out and the previous day changed to accomdate the missing day at the beginning of the semester. I suggest turning this into extra credit and including a regression assignment in the future. - ID
+
+
+## Module 2 Homework Assignment 4
+
+### Question 1
+
+#### Last week we wrote a function: portfolio_finder which returns the final values of a stock/bond portfolio based on initial and monthly contributions. But this function loses a lot of data since we do not return any of our intermediary monthly values. 
+
+#### Instead, let's write a function that will output a vector showing the value of a single investment over the entire time period
+
+* Inputs: stock symbol, reference table, initial investment, monthly allocation, share of contributions to be invested in that stock
+* Output: a vector of the values of the investment over time
+
+
+```{r "Example single_stock_vector function", echo = F, eval = T}
+single_stock_vector <- function(ref_table,
+                               initial_value,
+                               monthly_contribution,
+                               symbol,
+                               share){
+  require(lubridate)
+  # dates
+  dates <- sort(unique(ref_table$date))
+  
+  # initial date of investment would be first of month
+  initial_date <- floor_date(dates[1], unit = "month")
+  
+  # add our initial date value
+  
+  dates <- c(initial_date, dates)
+  
+  output <- numeric(length(dates)) + 1 # our initial row is the starting value
+  output[1] <- initial_value * share
+  
+  for(i in c(2:length(dates))){
+    output[i] <- monthly_update(output[i-1], dates[i], symbol, 
+                                   ref_table) + monthly_contribution*share
+  }
+  return(output)
+}
+
+# Uncomment to test
+single_stock_vector(month_end, 100, 0, "BND", 1)
+```
+
+
+#### a) Using the single_stock_value function I've given you, write a new function, portfolio_finder2 that returns a data frame with the historical value of multiple stock symbols over time
+
+```{r "day 4: question 1a", echo = F, eval = F}
+portfolio_finder2 <- function(ref_table,
+                              initial_value,
+                              monthly_contribution,
+                              symbols,
+                              shares){
+  
+  # Check our inputs
+  # Check that our shares add up to 1
+  
+  # FILL IN
+
+  
+  require(lubridate)
+  # SET UP DATE COLUMN OF DATA.FRAME
+  # SEE SINGLE_STOCK_VALUE ABOVE FOR HINT
+  dates <- # fill in
+  
+  # initialize output data.frame
+  output_df <- data.frame("dates" = dates)
+  
+  # Loop through stock symbols
+  for(col in 1:length(symbols)){
+    # Each time we go through the loop, add a new column
+    output_df[, col + 1] <- single_stock_vector(# fill in)
+  }
+  # rename our columns
+  # FILL IN
+  return(output_df)
+}
+
+```
+
+```{r "ANSWER KEY 4.1a", echo = F, eval = T}
+portfolio_finder2 <- function(ref_table,
+                              initial_value,
+                              monthly_contribution,
+                              symbols,
+                              shares){
+  
+  # Check our inputs
+  # Check that our shares add up to 1
+  if(sum(shares) != 1){
+    stop("Share values do not add up to 1")
+  }
+  
+  require(lubridate)
+  # dates
+  dates <- sort(unique(ref_table$date))
+  initial_date <- floor_date(dates[1], unit = "month")
+  dates <- c(initial_date, dates)
+  
+  output_df <- data.frame("dates" = dates)
+  
+  for(col in 1:length(symbols)){
+    output_df[, col + 1] <- single_stock_vector(ref_table,
+                                               initial_value,
+                                               monthly_contribution,
+                                               symbols[col],
+                                               shares[col])
+  }
+  names(output_df) <- c("date", symbols)
+  return(output_df)
+}
+
+```
+
+__Your output should look like this:__
+
+```{r, echo = T, eval = T}
+answer <- portfolio_finder2(month_end, 100, 0, 
+                            c("AAPL", "JCP"), 
+                            c(0.5, 0.5))
+head(answer, 4)
+```
+
+#### b) Now that we can track our stock performance over time, come up with a fake investment strategy. You must allot at least 5% of your investment and monthly contribution to each stock/bond. Make a line chart showing the performance of each stock in your portfolio. Be sure to correctly label and title your chart.
+
+__This is an example, yours will have different lines__
+
+```{r "ANSWER KEY 4.1b", echo = F, eval = T}
+plot_data <- portfolio_finder2(month_end, 100, 20,
+                               unique(month_end$Stock),
+                               c(0.1, 0.05, 0.2, 0.1, 0.1, 0.15, 0.2, 0.1))
+
+plot_data %>% gather(key = symbol, value = value, -date) %>% 
+  ggplot(aes(x = date, y = value, color = symbol)) +
+  geom_line() +
+  scale_x_date(name = NULL, date_breaks = "1 year",
+               date_labels = "%Y") +
+  scale_y_continuous(NULL, labels = dollar) +
+  labs(title = "Components of hypothetical portfolio",
+       subtitle = "$100 initial investment and $20 monthly contribution",
+       caption = "Stock closing price data from NASDAQ")
+```
+
+### Question 2
+
+#### a) One major thing we are still missing from our portfolio_finder2 is a column which keeps a running total of our portfolio's value. Update the function to include a column with the total value of all stocks/bonds for each month.
+
+__Try using the rowSums function and be sure that your solution works no matter how many stocks you choose__
+
+```{r "day 4: question 2a", echo = F, eval = F}
+portfolio_finder2 <- function(# fill in ){
+  # Copy the code from porfolio_finder2 above
+  # add code to calculate our running totals
+  # Hint: Add the Total column after you have have finished the for loop
+  # Hint 2: data.frame[, -1] returns all columns of a data.frame 
+  #         except for the first column
+  }
+```
+
+
+```{r "ANSWER KEY 4.2a", echo = F, eval = T}
+portfolio_finder2 <- function(ref_table,
+                              initial_value,
+                              monthly_contribution,
+                              symbols,
+                              shares){
+  
+  # Check our inputs
+  # Check that our shares add up to 1
+  if(sum(shares) != 1){
+    stop("Share values do not add up to 1")
+  }
+  # Check out symbols names
+  ref_names <- unique(ref_table$Stock)
+  if(sum(!(symbols %in% ref_names)) > 0){
+    stop("At least one stock symbol does not exist in the reference table")
+  }
+  
+  require(lubridate)
+  # dates
+  dates <- sort(unique(ref_table$date))
+  initial_date <- floor_date(dates[1], unit = "month")
+  dates <- c(initial_date, dates)
+  
+  output_df <- data.frame("dates" = dates)
+  
+  for(col in 1:length(symbols)){
+    output_df[, col + 1] <- single_stock_value(ref_table,
+                                               initial_value,
+                                               monthly_contribution,
+                                               symbols[col],
+                                               shares[col])
+  }
+  names(output_df) <- c("date", symbols)
+  output_df$Total <- rowSums(output_df[, -1])
+  return(output_df)
+}
+```
+
+Here is what the output for your new function should look like:
+
+```{r "ANSWER KEY 4.2a.2", echo = T, eval = T}
+answer <- portfolio_finder2(month_end, 100, 0, 
+                            c("AAPL", "JCP", "BND"), 
+                            c(0.3, 0.4, 0.3))
+head(answer, 4)
+```
+
+#### b) Create a hypothetical portfolio and graph its total value over the course of the ten years of investment. Again, you must allocate at least 5% of your initial amount and monthly contributions to each stock/bond. Here is an example plot:
+
+```{r "ANSWER KEY 4.2b", echo = F, eval = T}
+plot_data <- portfolio_finder2(month_end, 500, 50,
+                               unique(month_end$Stock),
+                               c(0.1, 0.1, 0.15, 0.1, 0.1, 0.15, 0.2, 0.1))
+
+plot_data %>% 
+  ggplot(aes(x = date, y = Total)) +
+  geom_line() +
+  scale_x_date(name = NULL, date_breaks = "1 year",
+               date_labels = "%Y") +
+  scale_y_continuous(NULL, labels = dollar) +
+  labs(title = "Total value of hypothetical portfolio",
+       subtitle = "$500 initial investment and $50 monthly contribution")
+```
+
+#### c) Really what we are interested in though is how much money our portfolio made beyond the money we directly invested (our initial money and our monthly contributions). Write a new function: contribution_adder that uses the output of our portfolio_finder2 function and adds columns which keep a running total of how much contributions we make directly to the portfolio and how much profit our portfolio generates. 
+
+__Your output should look like this__
+
+```{r "day4: question 2c", echo = F, eval = F}
+contribution_adder <- function(portfolio_data,
+                               initial_investment,
+                               monthly_contribution){
+  # Check that we have a "Total" column in our portfolio_data
+  # if it does not exist, exit with an error message
+  
+  # setup
+  portfolio_data$Contribution <- NA
+  portfolio_data$Contribution[1] <- initial_investment
+  
+    for(i in 2:nrow(portfolio_data)){
+    # running total of all contributions at each month + initial investment
+      portfolio_data$Contribution[i] <- 
+    }
+  # For each month, profit is equal to Total - Contribution
+  portfolio_data$Profit <- # fill in
+  return(portfolio_data)
+
+}
+```
+
+
+```{r "ANSWER KEY 4.2c", echo = F, eval = T}
+contribution_adder <- function(portfolio_data,
+                               initial_investment,
+                               monthly_contribution){
+  
+  if(!("Total" %in% names(portfolio_data))){
+    stop("No Total Column in input data")
+  }
+  
+  portfolio_data$Contribution <- NA
+  portfolio_data$Contribution[1] <- initial_investment
+  
+  for(i in 2:nrow(portfolio_data)){
+    portfolio_data$Contribution[i] <- 
+      (portfolio_data$Contribution[i-1] + monthly_contribution)
+  }
+  portfolio_data$Profit <- portfolio_data$Total - portfolio_data$Contribution
+  return(portfolio_data)
+}
+
+```
+
+```{r "Example Answer 4.2c", echo = T, eval = T}
+input_data <- portfolio_finder2(month_end, 100, 20, 
+                            c("AAPL", "BND"), 
+                            c(0.5, 0.5))
+
+head(contribution_adder(input_data, 100, 20))
+```
+
+### Question 3
+
+#### a) Using our new contribution and profit columns create an area chart for a hypothetical portfolio. Again, make sure that each stock/bond receives at least 5% of your contributions. You should not copy my allocation.
+
+__Here is an example chart and portfolio__
+
+**Make sure that your profit is on top of your contribution for the chart, use the factor() function and set the levels argument**
+
+```{r "Day 4: Question 3a", echo = F, eval = F}
+portfolio_data <- portfolio_finder2(# fill in) %>% 
+  contribution_adder(# fill in)
+    
+portfolio_data %>% select(date, Contribution, Profit) %>% 
+  gather(# fill in) %>% 
+  ggplot(aes(x = # fill in, y = # fill in, 
+             fill = factor(# fill in, levels = c("Profit", "Contribution")))) +
+    # fill in
+```
+
+```{r "ANSWER KEY 4.3a", echo = F, eval = T}
+input_data <- portfolio_finder2(month_end, 100, 20,
+                               unique(month_end$Stock),
+                               c(0.05, 0.1, 0.15, 0.1, 0.15, 0.15, 0.2, 0.1))
+
+plot_data <- contribution_adder(input_data, 100, 20)
+
+plot_data %>% select(date, Contribution, Profit) %>% 
+  gather(key = Type, value = value, -date) %>% 
+  ggplot(aes(x = date, y = value, 
+             fill = factor(Type, levels = c("Profit", "Contribution")))) +
+  geom_area() +
+  scale_fill_discrete(NULL) +
+  scale_y_continuous(NULL, labels = dollar) +
+  scale_x_date(NULL) +
+  labs(title = "Breakout of Hypothetical investment portfolio 2008-2017",
+       subtitle = "$100 initial investment with $20 monthly contribution")
+```
+
+#### b) As you have seen previously, some investments are risky but have high risk and high return like stocks. Buying Apple in 2008 would make you a millionaire now while buying JCPenny in 2008 could have wiped out your savings. Bonds, on the other hand are low risk and low return. I want you now to create three types of portfolios: risk averse, risk neutral and risk loving.
+
+__For your risk averse portfolio, 50% of your investment allocations should be in bonds (BND and VBLTX)__
+
+__For your risk neutral portfolio, 20% of your investment allocations should be in bonds__
+
+__For your risk loving portfolio, 5% of your investment allocations should be in bonds__
+
+__For all of your portfolios you must have some investment in each stock/bond__
+
+```{r "Day 4: question 3b", echo = F, eval = F}
+risk_averse <- # fill in
+
+risk_neutral <- # fill in 
+  
+risk_loving <- # fill in
+```
+
+```{r "ANSWER KEY 4.3b", echo = F, eval = T}
+risk_averse <- portfolio_finder2(month_end, 100, 20,
+                               unique(month_end$Stock),
+                               c(0.25, 0.25, 0.05, 0.1, 0.1, 0.05, 0.1, 0.1)) %>% 
+  contribution_adder(100, 20)
+
+risk_neutral <- portfolio_finder2(month_end, 100, 20,
+                               unique(month_end$Stock),
+                               c(0.1, 0.1, 0.15, 0.1, 0.15, 0.15, 0.15, 0.1)) %>% 
+  contribution_adder(100, 20) 
+  
+risk_loving <- portfolio_finder2(month_end, 100, 20,
+                               unique(month_end$Stock),
+                               c(0.025, 0.025, 0.1, 0.15, 0.15, 0.2, 0.15, 0.2)) %>% 
+  contribution_adder(100, 20)
+```
+
+#### c) Create area plots for our three portfolios and label them appropriately. Be sure to display them in your final submission.
+
+```{r "Day 4: question 3c", echo = F, eval = F}
+risk_averse_plot <- # fill in
+
+risk_neutral_plot <- # fill in
+  
+risk_loving_plot <- # fill in
+```
+
+```{r "ANSWER KEY 4.3c", echo = F, eval = T}
+risk_averse_plot <- risk_averse %>% 
+  select(date, Contribution, Profit) %>% 
+  gather(key = Type, value = value, -date) %>% 
+  ggplot(aes(x = date, y = value, 
+             fill = factor(Type, levels = c("Profit", "Contribution")))) +
+  geom_area() +
+  scale_fill_discrete(NULL) +
+  scale_y_continuous(NULL, labels = dollar) +
+  scale_x_date(NULL) +
+  labs(title = "Breakout of risk averse investment portfolio 2008-2017",
+       subtitle = "$100 initial investment with $20 monthly contribution")
+
+risk_neutral_plot <- risk_neutral %>% 
+  select(date, Contribution, Profit) %>% 
+  gather(key = Type, value = value, -date) %>% 
+  ggplot(aes(x = date, y = value, 
+             fill = factor(Type, levels = c("Profit", "Contribution")))) +
+  geom_area() +
+  scale_fill_discrete(NULL) +
+  scale_y_continuous(NULL, labels = dollar) +
+  scale_x_date(NULL) +
+  labs(title = "Breakout of risk neutral investment portfolio 2008-2017",
+       subtitle = "$100 initial investment with $20 monthly contribution")
+
+risk_loving_plot <- risk_loving %>% 
+  select(date, Contribution, Profit) %>% 
+  gather(key = Type, value = value, -date) %>% 
+  ggplot(aes(x = date, y = value, 
+             fill = factor(Type, levels = c("Profit", "Contribution")))) +
+  geom_area() +
+  scale_fill_discrete(NULL) +
+  scale_y_continuous(NULL, labels = dollar) +
+  scale_x_date(NULL) +
+  labs(title = "Breakout of risk loving investment portfolio 2008-2017",
+       subtitle = "$100 initial investment with $20 monthly contribution")
+```
+
+#### d) Area plots alone do not really help us compare strategies, create a line plot showing the Total values for our three strategies.
+
+__Example below__
+
+```{r "ANSWER KEY 4.4d", echo = F, eval = T}
+plot_data <- data.frame("date" = risk_averse$date,
+                        "averse" = risk_averse$Profit,
+                        "neutral" = risk_neutral$Profit,
+                        "loving" = risk_loving$Profit)
+
+plot_data %>% 
+  gather(key = profile, value = value, -date) %>% 
+  ggplot(aes(x = date, y = value, color = profile)) +
+  geom_line() +
+  scale_y_continuous("Total Profit", labels = dollar) +
+  scale_color_discrete("Risk Profile") +
+  labs(title = "Total Profit of investment portfolios over ten-year period",
+       subtitle = "$100 initial contribution with $20 monthly contributions",
+       x = NULL)
+```
+
+**Surprisingly, for my example the risk neutral portfolio outperformed the risk loving portfolio. This is because my risk loving portfolio allocated too much to a few stocks which ultimately underperformed.**
+
+#### e) Based on my example above, why might financial advisors recommend investing in many different stocks/bonds as opposed to just one or two?
+
+### Question 4
+
+#### a) So far we've looked at how changing the allocation yields different results. One other thing we could change is our initial and monthly contributions. Create three new profiles, low, medium, and high with the same initial value but monthly contributions of $10, $20, and $30 respectively. Each portfolio should have the same allocation of stock/bonds.
+
+```{r "day 4: question 4a", echo = F, eval = F}
+low_portfolio <- # fill in
+  
+medium_portfolio <- #fill in
+
+high_portfolio <- # fill in
+```
+
+```{r "ANSWER KEY 4.4a", echo = F, eval = T}
+low_portfolio <- portfolio_finder2(month_end, 100, 10,
+                               unique(month_end$Stock),
+                               c(0.1, 0.1, 0.15, 0.1, 0.15, 0.15, 0.15, 0.1)) %>% 
+  contribution_adder(100, 10)
+
+medium_portfolio <- portfolio_finder2(month_end, 100, 20,
+                               unique(month_end$Stock),
+                               c(0.1, 0.1, 0.15, 0.1, 0.15, 0.15, 0.15, 0.1)) %>% 
+  contribution_adder(100, 20)
+
+high_portfolio <- portfolio_finder2(month_end, 100, 30,
+                               unique(month_end$Stock),
+                               c(0.1, 0.1, 0.15, 0.1, 0.15, 0.15, 0.15, 0.1)) %>% 
+  contribution_adder(100, 30)
+```
+
+#### b) Similar to question 3d, create a plot showing the total value of each portfolio over time
+
+__Example Below__
+
+```{r "day 4: question 4b", echo = F, eval = F}
+contribution_plot <- # fill in
+```
+
+
+```{r "ANSWER KEY 4.4b", echo = F, eval = T}
+plot_data <- data.frame("date" = low_portfolio$date,
+                        "low" = low_portfolio$Total,
+                        "medium" = medium_portfolio$Total,
+                        "high" = high_portfolio$Total)
+
+plot_data %>% 
+  gather(key = profile, value = value, -date) %>% 
+  ggplot(aes(x = date, y = value, color = profile)) +
+  geom_line() +
+  scale_y_continuous("Total Value", labels = dollar) +
+  scale_color_discrete("Monthly\ncontribution",
+                       labels = c("low" = "$10",
+                                  "medium" = "$20",
+                                  "high" = "$30"),
+                       breaks = c("low", "medium", "high")) +
+  labs(title = "Total Value of investment portfolios over ten-year period",
+       subtitle = "$100 initial contribution with identical allocation",
+       x = NULL)
+```
+
+#### c) How much extra profit did you make for your medium and high contribution portfolios compared to your low contribution portfolios? How much more valuable is your high contribution portfolio than your low contribution portfolio, is the difference greater than the amount of raw contributions you gave to one portfolio over the other? 
+
+**To find this you can just subtract the profit in your low portfolio from the profit in your high and medium portfolios**
+
+```{r "ANSWER KEY 4.4b.2", echo = F, eval = T}
+plot_data <- data.frame("date" = low_portfolio$date,
+                        "medium" = medium_portfolio$Profit - low_portfolio$Profit,
+                        "high" = high_portfolio$Profit - low_portfolio$Profit)
+
+plot_data %>% 
+  gather(key = profile, value = value, -date) %>% 
+  ggplot(aes(x = date, y = value, color = profile)) +
+  geom_line() +
+  scale_y_continuous(NULL, labels = dollar) +
+  scale_color_discrete("Monthly\ncontribution",
+                       labels = c("medium" = "$20",
+                                  "high" = "$30"),
+                       breaks = c("medium", "high")) +
+  labs(title = "Profit of investment portfolios relative to $10 monthly contribution",
+       subtitle = "$100 initial contribution with identical allocation",
+       x = NULL)
+```
+
+**For my high contribution portfolio, I invested a total of \$20\*\$120 = \$2400 more from my pockets but had a higher profit of almost \$1200. Even though I only spent an extra \$2400 on my high contribution portfolio, after ten years that portfolio is worth \$3600 more than my low-contribution portfolio!**
+
+#### d) For your own portfolios, how much "extra profit" does your high contribution portfolio have at the end of the ten years than your low contribution portfolio? (for me it is $1200)
+
+#### e) Experts often recommend a mix of stocks and bonds in a retirement portfolio, but recommend having a "growth" portfolio (lots of stocks) when you're young, that you switch to an "income portfolio" (lots of bonds) as you get closer to retirement. Using your insight and the information from this assignment, why might they suggest this strategy?
+
+ -->

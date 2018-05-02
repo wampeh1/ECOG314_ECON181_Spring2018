@@ -1,0 +1,310 @@
+---
+title: "Module 2 Day 1 Student"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(tidyverse)
+library(stargazer)
+library(broom)
+# install.packages("stringr")
+library(stringr)
+```
+
+```{r}
+day1_dirc <- # Set your working directory
+setwd(day1_dirc)
+```
+
+## Recap of last week
+Recap exercise #1:
+* Read in the data acs_2016_cleaned.csv
+* Recreate the two regressions in the slides and display them using a stargazer table:
+```{r, results='asis',message=FALSE}
+acs_2016_cleaned <- read_csv("Data/acs_2016_cleaned.csv")
+
+baseline_model <- lm( , , )
+
+improved_model <- lm( , , )
+
+stargazer(baseline_model, improved_model, 
+          title = ,
+          header = FALSE, dep.var.caption = "",
+          type = "text")
+```
+
+Recap exercise #2:
+* Use `augment()` to create a box-whisker plot of residuals by sex for our improved model
+* Are we under- or over-predicting the effect on wages?
+
+```{r}
+improved_model_augmented <- augment( , )
+
+ggplot(improved_model_augmented) +
+geom_boxplot(aes(x = sex, y = .resid)) +
+ylim(c(-10,10)) +
+labs(x = "Residual",
+     y = "Density",
+     title = "Distribution Residuals by Gender",
+     color = "") +
+theme_minimal()
+```
+
+## Checking the data
+```{r}
+list.files("Data/")
+```
+
+## Previewing the property data
+```{r, message=F}
+property_data <- read_csv("Data/property_redfin_01.csv")
+names(property_data)
+View(property_data)
+```
+
+What is the maximum square footage of a condo in property_data?
+
+```{r, message=F}
+
+
+```
+
+## Previewing the location data
+* Read in one of our location files, what are the names of the columns in the file? What does this data look like? Are there any columns that exist in both our property and location data?
+
+```{r, message=F}
+location_data <- read_csv()
+
+```
+
+## Combining property data
+```{r, message=FALSE}
+property_data2 <- read_csv("Data/property_redfin_02.csv")
+identical(names(property_data2), names(property_data))
+names(property_data2)
+
+
+nrow(property_data)
+nrow(property_data2)
+
+property_data_bound <- bind_rows(property_data, property_data2)
+nrow(property_data_bound)
+```
+
+## Combining location data
+```{r, message=F}
+location_data2 <- read_csv()
+identical()
+
+location_data_bound <- 
+```
+
+## Simple loop examples
+```{r}
+for(num in seq(1,8)){
+    print(num^2) 
+}
+
+months <- c("January","February", "March", "April", "May", "June", "July", "August", 
+            "September", "October","November","December")
+
+for(mon in months){
+  print(mon)
+}
+
+for(mon in months){
+  print(paste(mon, "is my favorite month."))
+}
+```
+
+## Using indices to loop
+```{r}
+pets <- c("platypus", "frog", "cat")
+
+length(pets)
+
+#Printing indices
+for(pet in seq(1, length(pets))){
+  print(pet)
+}
+
+#Using indices to print elements
+for(pet in seq(1, length(pets))){
+  print(pets[pet])
+}
+```
+
+## Cumulative sum __without__ saving work
+```{r}
+num_vec <- seq(1,5)
+
+for(currentNum in seq(1, length(num_vec))){
+  # Calculate sum at current iteration
+  currentCumulSum <- sum(num_vec[1:currentNum])
+  
+  # Print current cumulative sum
+  print(currentCumulSum)
+}
+
+```
+
+## Cumulative sum __with__ results saved
+```{r}
+num_vec <- seq(1,5)
+
+# Initialize object before the loop
+cumulSum <- numeric()
+
+for(currentNum in seq(1, length(num_vec))) {
+  # Calculate sum at current iteration
+  currentCumulSum <- sum(num_vec[1:currentNum])
+  
+  # Write to object during loop to record progress
+  cumulSum <- c(cumulSum, currentCumulSum)
+}
+
+print(cumulSum)
+```
+
+## Creating a string from substrings
+```{r, eval = FALSE}
+string_vec <- c("Never","Gonna", "Give", "You", "Up", 
+                "Never", "Gonna", "Let", "You", "Down")
+
+## initialize the variable
+
+for(index in set){
+  ## code to be executed
+}
+```
+
+## Evens and odds
+```{r}
+# %% is the modulus operator 
+# We are finding the remainder!
+4 %% 1
+10 %% 4
+3 %% 2
+```
+
+```{r}
+testNum <- 12
+
+if(testNum %% 2 == 0){
+  print(paste(testNum, "is EVEN"))
+} else {
+  # If the remainder after division by 2 is not 0
+  # then it must be odd (right...?)
+  print(paste(testNum, "is ODD"))
+}
+```
+
+Characterize and record the numbers from 1 to 5 as even or odd
+```{r}
+evens <- numeric()
+odds <- numeric()
+
+for(i in seq(1,5)){
+  if(i %% 2 == 0){
+    evens <- c(evens, i)
+  } else{
+    odds <- c(odds, i)
+  }
+}
+
+evens
+odds
+```
+
+## Assigning grades
+```{r}
+student_grade <- 71
+```
+
+Return a correct statement that the student passed or failed (cutoff for passing is 50)
+```{r}
+
+if(logical argument){
+  ## code to be executed
+} else{
+  ## code to be executed
+}
+```
+
+Now let's assign grades using more than one condition
+```{r, eval=FALSE}
+test_scores <- c(85,55,100,67,73,92,94,99,87)
+
+# Intialize our vector
+letter_grades <- NULL
+for(grade in test_scores){
+  if(grade >= 90){
+    letter_grades <- paste(letter_grades,"A")
+  } else if(grade >= 80) {
+    letter_grades <- paste(letter_grades,"B")
+  } else if (grade >= 70) {
+    letter_grades <- paste(letter_grades,"C")
+  } else if (grade >= 60) {
+    letter_grades <- paste(letter_grades,"D")
+  } else {
+    letter_grades <- paste(letter_grades,"F")
+  }
+}
+
+```
+
+## In-class excerise
+Create a loop that will take the square root of a positive number or give us an NA if the number is negative. Save the results in a vector you initialized outside of the loop.
+```{r, In-class, echo = F, eval= F}
+num_list <- c(4,169,-9,9,-144,0)
+
+## Intialize your vector
+
+for(variable in index){
+  if(logical argument) {
+    ## code to be executed
+  } else {
+    ## code to be executed
+  }
+}
+```
+
+## Reading in the Redfin data
+```{r, results='hide'}
+## create a vector of data set names
+property_files <- paste0("Data/property_redfin_0", 
+                         1:8, ".csv")
+location_files <- paste0("Data/location_redfin_0", 
+                         1:8, ".csv")
+
+# combine them into a single vector
+files <- c(property_files, location_files)
+files
+```
+
+str_detect() is a function in the tidyverse package that can tell whether a string contains a certain word or phrase
+```{r}
+str_detect("property_redfin_01.csv", "property") # TRUE
+str_detect("location_redfin_01.csv", "property") # FALSE
+
+str_detect(c("property_redfin_01.csv", "location_redfin_01.csv"),
+           "location") # c(FALSE, TRUE)
+```
+
+Using what we have learned in class today, read in the location and property data using for loops and if else statements. Within in the loop, combine all of the location data into one data set, and all of the property data into one data set.
+```{r}
+# initialize empty data.frames
+property_data <- data_frame() 
+location_data <- data_frame() 
+
+for(file in files){
+    if(str_detect( , )){ 
+      data <- ## code to be executed
+      property_data <- ## code to be executed
+    } else if(str_detect( , )){
+      data <- ## code to be executed
+      location_data <- ## code to be executed
+    }
+}
+```

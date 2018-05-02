@@ -1,0 +1,173 @@
+---
+title: "Student Code"
+output: pdf_document
+---
+
+## Recap from Last Week
+```{r, eval = FALSE}
+library(tidyverse)
+library(broom)
+setwd( ) # MAKE SURE TO SET THIS EVERY CODE CHUNK THAT WE LOAD DATA
+
+joined_data <- read_csv("joined_data_v2.csv") 
+
+joined_data %>% 
+    mutate(distance_tenth = round(metro_distance, 0.1)) %>%     
+    group_by(distance_tenth) %>% 
+    summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T)) %>% 
+ggplot(aes(x = distance_tenth, y = price)) +
+    geom_line() +
+    labs(title = "Price vs distance from metro station",
+         y = "USD/Sq ft.",
+         x = "Miles",
+         caption = "Source: Redfin and WMATA")+
+  theme_minimal()
+```
+
+## Creating an OLS Model
+```{r, eval = FALSE}
+library(tidyverse)
+
+setwd( ) # Put your  file directory here
+joined_data <- read_csv("joined_data_v2.csv")
+```
+
+## The Effect of Metro Distance on Home Prices
+
+```{r, eval=FALSE}
+library(stargazer)
+
+dist_OLS <- lm(PRICE/SQUARE.FEET ~ metro_distance, data = joined_data)
+stargazer(dist_OLS, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T, type = "text")
+```
+
+## Adding States to Our Models
+```{r}
+state_dist <- lm(PRICE/SQUARE.FEET ~ metro_distance + STATE, 
+                 data = joined_data)
+
+stargazer(dist_OLS, state_dist, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T, type = "text")
+```
+
+## Dates Review
+
+```{r, eval=FALSE}
+date1 <- as.Date("March-26-2018", format = "%B-%d-%Y")
+date2 <- as.Date("Wednesday- Mar 28, 2018", format = "%A- %b %d, %Y")
+
+## Perform math on our dates
+date2 - date1
+date1 - 3
+
+# Generate sequences of dates for different intervals
+seq(date1, date2, by = "day")
+```
+
+## Refresher Exercise
+```{r, echo = FALSE, eval = FALSE}
+setwd( )
+
+read_csv("dates.csv") %>%
+  mutate( ) %>%
+  mutate( )
+```
+
+## Creating days_on_market
+```{r, eval=FALSE}
+joined_data <- joined_data %>% 
+    mutate(SOLD.DATE = as.Date(SOLD.DATE, format = "%B-%d-%Y"),
+           LIST.DATE = as.Date(LIST.DATE, format = "%A- %b %d, %Y"),
+           days_on_market = as.numeric(SOLD.DATE - LIST.DATE))
+```
+
+## Graphing the Relationship
+```{r, eval=FALSE, echo = FALSE, warning=FALSE}
+joined_data %>%
+  mutate(days_three = round(days_on_market/3)*3) %>% 
+  group_by(days_three) %>% 
+  summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T)) %>% 
+  ggplot(aes(x = days_three, y = price)) +
+    geom_line() +
+    labs(title = "Price vs Days on the Market",
+         y = "Average USD/Sq ft.",
+         x = "Days on the Market",
+         caption = "Source: Redfin and WMATA")+
+    theme_minimal()
+```
+
+## Testing Our Hypothesis
+```{r, eval=FALSE}
+# Create your own model using any of the variables we have in the data set
+your_model <- lm(PRICE/SQUARE.FEET ~  ,data = joined_data)
+
+# Is your model a good model?
+stargazer( )
+```
+
+## Looking Back at Distance
+```{r, eval = FALSE, echo = FALSE, warning=FALSE}
+joined_data %>% 
+    mutate(price = PRICE/SQUARE.FEET) %>%     
+ggplot() +
+    geom_point(aes(x = metro_distance, y = price)) +
+    labs(title = "Price vs Distance from Metro Station",
+         y = "USD/Sq ft.",
+         x = "Miles",
+         caption = "Source: Redfin and WMATA")+
+  scale_y_continuous(limits = c(-50, 1500)) +
+  theme_minimal()
+```
+
+## Adding Quadratic Term
+```{r, eval=FALSE}
+dist_sq <- lm(PRICE/SQUARE.FEET ~ metro_distance + 
+                                  metro_distance^2,
+                data = joined_data)
+```
+
+## Did It Work?
+
+```{r,eval=FALSE echo = FALSE, results='asis'}
+stargazer(dist_OLS, dist_sq, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Correcting the Formula
+```{r}
+dist_sq <- lm(PRICE/SQUARE.FEET ~ metro_distance + 
+                                I(metro_distance^2),
+                data = joined_data)
+```
+
+## Did It Work?
+```{r, echo = FALSE, results='asis'}
+stargazer(dist_OLS, dist_sq, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Visulaizing the Relationship
+```{r, warning=FALSE, eval = FALSE}
+library(broom)
+dist_sq_augmented <- augment( , )
+
+dist_sq_augmented %>% 
+  mutate(price = PRICE/SQUARE.FEET) %>%     
+ggplot() +
+  geom_point(aes(x = , y = ))+
+  geom_line(aes(x = , y = ), color = ) +
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD/Sq ft.", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  scale_y_continuous(limits = c(-50, 1500)) +
+  theme_minimal()  
+```

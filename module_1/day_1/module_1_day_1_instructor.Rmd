@@ -1,0 +1,295 @@
+---
+title: "Module 1 Day 1"
+author: "Becca Jorgensen"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+```
+
+```{r}
+# load libraries
+library(tidyverse)
+```
+
+
+## The American Community Survey
+
+Use the `setwd()` function to set the working directory:
+
+```{r}
+setwd("/fsr/home/m1raj01/Class_Materials/Spring_2018/module_1/day_1")
+```
+
+Now use the `read_csv()` function to read in the file acs_2016_educ.csv
+
+```{r}
+acs_2016_educ <- read_csv("acs_2016_educ.csv")
+```
+
+What are the dimensions of our data? What function should we use?
+11 by 3, dim()
+```{r}
+dim(acs_2016_educ)
+```
+
+Use the `head()` function to look at the first few rows.
+
+```{r}
+head(acs_2016_educ)
+```
+
+
+### dplyr
+
+Now try the `glimpse()` function from the dplyr library. What's the difference?
+
+```{r}
+glimpse(acs_2016_educ)
+```
+
+
+### select()
+
+The arguments to select are first the data frame followed by the columns you wish to keep. What does the following code return? 
+
+First returns only EDUC, second all but EDUC
+
+```{r}
+select(acs_2016_educ, EDUC)
+select(acs_2016_educ, -EDUC)
+```
+
+Use the select function to create a new data frame called acs_small that only has the columns EDUC and INCTOT.
+
+```{r, echo = FALSE}
+acs_small <- select(acs_2016_educ,"EDUC", "INCTOT")
+```
+
+### ggplot2
+
+Let's make a simple scatter plot:
+
+```{r, fig.width=6, fig.height=2}
+ggplot(data = acs_small, 
+       aes(x = EDUC, y = INCTOT)) + 
+    geom_point()
+```
+
+What's a major problem with this chart?
+
+Axes don't have clear labels
+
+
+Let's add axis labels
+
+```{r, fig.width=6, fig.height=2}
+ggplot(data = acs_small) + 
+  geom_point(aes(x = EDUC, y = INCTOT)) +
+  labs(x = "Years of Education",
+       y = "Income")
+```
+
+What does this graph tell us about returns to education? 
+
+Generally increasing, goes up with category
+
+Why might this chart not give us the full picture?
+
+Other factors might matter (gender, age, experience)
+
+What happens if we comment out our geom layer?
+
+Get a blank chart
+    
+
+Now please create a chart that shows average wages on the x axis and average income on the y axis.
+
+* Be sure to label your axes.
+* What would you expect this to look like? 
+* What steps do you need to take to prepare the chart?
+
+
+```{r, fig.width=6, fig.height=2}
+ggplot(data = acs_2016_educ, 
+       aes(x =INCWAGE , y =INCTOT )) + 
+    geom_point() +
+    labs(x = "Average Wages",
+         y = "Average Income")
+```
+
+### Age and Income
+
+Now read in the file acs_2016_age.csv
+
+```{r}
+acs_2016_age <- read_csv("acs_2016_age.csv")
+```
+
+What variables are we dealing with? What functions can we use to look at the data?
+
+```{r}
+glimpse(acs_2016_age)
+head(acs_2016_age)
+
+```
+
+Let's make a plot showing the gap between wage and total income. First we need to mutate our data frame. Try adding a new column to the acs_2016_age dataframe that is the difference between total and wage income.
+
+```{r, echo = FALSE}
+acs_2016_age <-
+  mutate(acs_2016_age, 
+         nonwage_income = INCTOT-INCWAGE)
+```
+
+Now make a plot:
+
+* age on the x-axis
+* nonwage_income on the y-axis
+* appropriate axis labels and a title
+* both points and a line
+
+## Age and Non-wage Income
+
+```{r, fig.width=6, fig.height=2}
+ggplot(acs_2016_age, 
+       aes(x = AGE, y = nonwage_income )) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Age",
+       y = "Nonwage Income",
+       title = "Nonwage Income by Age")
+  
+```
+
+Why is this variable "noisy"? What's happening around age 65?
+
+Fewer people as age increases, people are retiring
+
+### Raw ACS Data
+
+Please read in the data file acs_2016_sample.csv. How many observations are in this dataset? How many variables?
+
+```{r, echo = FALSE}
+acs_2016_sample <- read_csv("acs_2016_sample.csv")
+```
+
+Let's make a histogram of the raw ACS income variable:
+
+```{r,fig.width=6, fig.height=2}
+ggplot(acs_2016_sample, aes(x =INCTOT )) +
+  geom_histogram(bins =25 ) +
+  labs(x = "Income", 
+       y = "Frequency", 
+       title = "Income Distribution", 
+       caption = "Source:2016 ACS")
+```
+
+Why does the distribution have a lot of mass at 10 million? 
+
+Missing values coded as 9999999
+
+
+### filter()
+
+We need to remove the observations that are missing INCTOT (coded as 9999999). The appropriate dplyr verb is filter(). What logical operator could we use?
+
+!=
+
+```{r}
+acs_2016_sample <- 
+  filter(acs_2016_sample , INCTOT<9999999 )
+```
+
+Now remake the same histogram but with the filtered data:
+
+```{r,fig.width=6, fig.height=2}
+ggplot(acs_2016_sample, aes(x =INCTOT )) +
+  geom_histogram(bins =25 ) +
+  labs(x = "Income", 
+       y = "Frequency", 
+       title = "Income Distribution", 
+       caption = "Source:2016 ACS")
+
+```
+
+Clean up the INCWAGE variable as well:
+
+```{r}
+acs_2016_sample <- 
+  filter(acs_2016_sample , INCWAGE < 9999999)
+```
+
+Please created a new data frame called acs_filtered that only has people who make more than $100,000 from wages. What are the dimensions of this dataframe? How many observations did we filter out? Make a histogram of their total income
+
+```{r}
+acs_filtered <- 
+  filter(acs_2016_sample ,INCWAGE>100000 )
+
+dim(acs_2016_sample)
+dim(acs_filtered)
+```
+
+```{r,fig.width=6, fig.height=2}
+ggplot(acs_filtered, aes(x = INCWAGE )) +
+  geom_histogram(bins = 25) +
+  labs(x = "WAGES", 
+       y = "FREQUENCY", 
+       title = "Wage Distribution over $100,000", 
+       caption = "Source:2016 ACS")
+```
+
+
+### Color as an Axis
+
+Just like we can map the x and y aesthetics in ggplot2 we can map color and fill. First we need to turn the SEX variable into a categorical variable using mutate() and factor()
+
+```{r, fig.width=6, fig.height=2}
+acs_2016_sample <- 
+  mutate(acs_2016_sample, SEX = factor(SEX))
+
+ggplot(acs_2016_sample, 
+       aes(x = INCWAGE, fill = SEX)) +
+  geom_histogram(bins = 100)
+```
+
+We can improve this chart
+
+* Add axis labels and a title (be sure to label the fill axis) 
+* Change the alpha value to 0.5 (What's the alpha value?)
+* Change the geom type from histogram to density (Why do we want to do this?)
+
+```{r, fig.width=6, fig.height=3}
+ggplot(acs_2016_sample, 
+       aes(x = INCWAGE , fill = SEX, color =SEX  )) +
+  geom_density(alpha = 0.5)+
+  labs(x = "Income",
+       y = "Density",
+       fill = "Gender",
+       color = "Gender",
+       title = "Income by Sex",
+       caption = "Source:2016 ACS")
+```
+
+We want to recode the SEX variable so that instead of 1,2 it is "Male", "Female". We can do this using the `ifelse()` function.
+
+```{r}
+acs_2016_sample <- 
+  mutate(acs_2016_sample, 
+         SEX = ifelse( SEX == 1 , "Male", "Female"))
+```
+
+```{r, fig.width=6, fig.height=3, echo = FALSE}
+ggplot(acs_2016_sample, 
+       aes(x = INCWAGE , fill = SEX, color =SEX  )) +
+  geom_density()+
+  labs(x = "Wage Income",
+       y = "Density",
+       fill = "Gender",
+       color = "Gender",
+       title = "Wage Income Distribution by Gender",
+       caption = "Source: 2016 ACS")
+```

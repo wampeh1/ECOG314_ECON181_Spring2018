@@ -1,0 +1,339 @@
+---
+title: "Module 2"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, size = "tiny", width = 50, fig.height = 3.5,
+                      fig.width = 5)
+library(tidyverse)
+library(broom)
+setwd("//mq/home/m1icd00/Class_Materials/Spring_2018/module_2/day_4/")
+```
+
+# Day 4
+
+## Recap Last Week
+* Discussed long and wide data
+    + Reshaped the data using `spread()` and `gather()`
+* Created our own set of functions to calculate distance to the nearest metro
+    + Wrapper functions
+* Discussed function safety
+    + `require()`, `warning()`, `stop()` 
+
+
+## Recap Last Week
+
+```{r, echo = FALSE, warning=FALSE}
+joined_data <- read_csv("joined_data_v2.csv") 
+
+joined_data %>% 
+    mutate(distance_tenth = round(metro_distance, 0.1)) %>%     
+    group_by(distance_tenth) %>% 
+    summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T)) %>% 
+ggplot(aes(x = distance_tenth, y = price)) +
+    geom_line() +
+    labs(title = "Price vs distance from metro station",
+         y = "USD/Sq ft.",
+         x = "Miles",
+         caption = "Source: Redfin and WMATA")+
+  theme_minimal()
+```
+
+
+## Goals for Today
+
+R:
+
+* Review liner models and dates
+* Create non-linear models in R
+
+Economics:
+
+* Further exploring the relationship between distance from a metro stop and home prices
+* Investigate non-linear relationship of location, distance, time on the market on home prices
+* Familiarize ourselves with different methods to account for non-linear effects
+
+## Brief Review of Regressions
+
+* Use it when we want to indentify a causal relationship
+* Regression analysis is used to describe the relationship between:
+    + A single response variable $Y$ and
+    + One or more predictor variables $X_1$, $X_2$, $X_3$, ..., $X_n$
+* Response should be continuous (but doesn't have to be!)
+* Predictor variables can be continous, discrete, or categorical
+    + Dummy variables are used to model categorical data 
+
+## Creating an OLS Model
+
+* Let's load in the data and see if there is a causal relationship between distance from the metro and home prices
+
+```{r, eval = FALSE}
+library(tidyverse)
+
+setwd( ) # Put your  file directory here
+joined_data <- read_csv("joined_data_v2.csv")
+```
+
+* What function do we use to create a regression model?
+* What function do we use to create our regression tables? 
+
+## The Effect of Metro Distance on Home Prices
+
+\scriptsize
+```{r, results='asis'}
+library(stargazer)
+
+dist_OLS <- lm(PRICE/SQUARE.FEET ~ metro_distance, data = joined_data)
+stargazer(dist_OLS, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Interpreting the Results 
+
+* How do we interpret the coefficient for `metro_distance`?
+* Does our intercept have any meaningful interpretation?
+* Is our current model a good model?
+    + If not, how could we improve it?
+    
+## Adding States to the Model
+
+* What are factors that affect housing prices that could differ from state to state?
+
+```{r}
+state_dist <- lm(PRICE/SQUARE.FEET ~ metro_distance +
+                                     STATE, 
+                 data = joined_data)
+```
+
+## Comparing the Results
+```{r, echo = FALSE, results='asis'}
+stargazer(dist_OLS, state_dist, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Comparing the Results
+
+* How do we interpret the coefficients on our dummy variables?
+* What happened to our `metro_distance` coefficient when we added our dummy variables?
+
+## Days on the Market
+
+* Conventional wisdom says that homes that spend a long time on the market generally cost less
+    + Seller may have set the price to high originally
+    + Buyers may be waiting for the seller to lower the price
+* Our data has the list date and the sale date
+    + Work with dates to create a new variable `days_on_market`
+    
+## Dates Review
+
+* In R, dates are just numbers displayed in a special format
+    + Generally stored as strings in our data
+    + Use `as.Date()` to convert them from strings to date objects
+
+```{r}
+date1 <- as.Date("March-26-2018", format = "%B-%d-%Y")
+date2 <- as.Date("Wednesday- Mar 28, 2018", 
+                 format = "%A- %b %d, %Y")
+```
+
+* We are able to read dates in virtually any format that they are entered
+    + We can find a list of formats [here](https://www.statmethods.net/input/dates.html)
+
+## Dates Review
+
+* Since dates are just numbers we can use them with mathematical functions and operations
+```{r}
+date2 - date1
+date1 - 3
+```
+
+* We can also generate date sequences
+```{r}
+seq(date1, date2, by = "day")
+```
+
+## Refresher Exercise
+
+* Load in the dates.csv data file then:
+    + Combine the three variables `Year`, `Month`, and `Day` into a single string variable `Date`
+    + Convert `Date` into a date variable
+    
+```{r, echo = FALSE, eval = FALSE}
+read_csv("dates.csv") %>%
+  mutate(Date = paste(Year, Month, Day)) %>%
+  mutate(Date = as.Date(Date, format = "%y %b %d"))
+```
+
+## Creating days_on_market
+
+* Remember dates are just numbers! 
+* We can calculate the number of days on the market by merely subtracting the sale date by the list date and converting it back to a number
+
+\scriptsize
+```{r}
+joined_data <- joined_data %>% 
+    mutate(SOLD.DATE = as.Date(SOLD.DATE, format = "%B-%d-%Y"),
+           LIST.DATE = as.Date(LIST.DATE, format = "%A- %b %d, %Y"),
+           days_on_market = as.numeric(SOLD.DATE - LIST.DATE))
+```
+
+## Graphing the Relationship
+```{r, echo = FALSE, warning=FALSE}
+joined_data %>%
+  mutate(days_three = round(days_on_market/3)*3) %>% 
+  group_by(days_three) %>% 
+  summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T)) %>% 
+  ggplot(aes(x = days_three, y = price)) +
+    geom_line() +
+    labs(title = "Price vs Days on the Market",
+         y = "Average USD/Sq ft.",
+         x = "Days on the Market",
+         caption = "Source: Redfin and WMATA")+
+    theme_minimal()
+```
+
+## Testing Our Hypothesis
+
+* The relationship doesn't appear to be as straightforward as we initially thought
+* Create a regression model that investigates the relationship between the days a house spends on the market and the price per square foot of a home
+    + You are free to use any variable in our data set
+    + Use `stargazer()` to display your results
+    + Why do you believe your model is a good model?
+    
+## Introduction to Non-Linear Models
+
+* Made some improvements to our model, but we can still do better
+* Let's think more about metro distance
+    + As we move farther away from the metro, distance probably matters less
+    + The effect of distance likely varies from state to state
+* We are unable to investigate either of the above relationships with a simple linear model
+
+## Looking Back at Distance
+```{r, echo = FALSE, warning=FALSE}
+joined_data %>% 
+    mutate(price = PRICE/SQUARE.FEET) %>%     
+ggplot() +
+    geom_point(aes(x = metro_distance, y = price)) +
+    labs(title = "Price vs Distance from Metro Station",
+         y = "USD/Sq ft.",
+         x = "Miles",
+         caption = "Source: Redfin and WMATA")+
+  scale_y_continuous(limits = c(-50, 1500)) +
+  theme_minimal()
+```
+
+## Adding A Quadratic Term
+
+* In our previous models, moving from 0.5 to 0.6 miles away from the metro has the same effect on price as 2.9 to 3.0 miles away
+* Can imagine that people pay extra to live in walking distance
+    + The farther we move away from the metro, the less distance affects price
+* We are able to apply mathematical transformations to the continous variables in our model
+    + We would like to use a quadratic term in our model
+
+## Adding A Quadratic Term
+
+* There are two ways we can include a quadractic term in our data:
+    1. Using formula functions provided by R
+    2. Constructing a new variable called `dist_sq` and adding it to the model
+
+* First, let's try to use the caret to take the exponenet
+```{r}
+dist_sq <- lm(PRICE/SQUARE.FEET ~ metro_distance + 
+                                  metro_distance^2,
+                data = joined_data)
+```
+
+## Did It Work?
+
+```{r, echo = FALSE, results='asis'}
+stargazer(dist_OLS, dist_sq, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Correcting Our Formula
+
+* When we are working with formulas in R, our math operators have different meanings
+    + ^ and * are used to create interactions
+* Use `I()` to apply our math operators
+
+```{r}
+dist_sq <- lm(PRICE/SQUARE.FEET ~ metro_distance + 
+                                I(metro_distance^2),
+                data = joined_data)
+```
+
+## Did It Work?
+```{r, echo = FALSE, results='asis'}
+stargazer(dist_OLS, dist_sq, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Manually Constructing the Variable
+
+* We should be right but let's double check to be sure
+* Create a new variable `metro_sq` and use it to create a non-linear regression model
+    + Compare this new model with the previous model in `stargazer()`
+    + Are the coefficients the same?
+
+## Interpreting Our Results
+
+* Let's look back at our regression table, do the magnitidues in our table make sense?
+* Direct interpretation of our coefficients becomes much more difficult
+    + The effect changes as we move farther away from a metro station
+    + Should check when the effect of metro distance becomes 0
+    + Can evaluate the effect at the mean metro distance
+* Helpful to create a graph to visualize this relationship
+
+## broom()
+* Recall our 3 main functions from the broom package
+    + `tidy()` - for creating a data frame of component statistics
+    + `augment()` - for observation level statistics (like fitted values and residuals)
+    + `glance()`- for model level statistics (like R-squared etc.)
+* We'll want to use `augment()` to plot our fitted values
+
+
+## Visulaizing the Relationship
+```{r, warning=FALSE, echo = FALSE}
+library(broom)
+dist_sq_augmented <- augment(dist_sq, joined_data)
+
+dist_sq_augmented %>% 
+  mutate(price = PRICE/SQUARE.FEET) %>%     
+ggplot() +
+  geom_point(aes(x = metro_distance, y = price))+
+  geom_line(aes(x = metro_distance, y = .fitted), color = "red") +
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD/Sq ft.", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  scale_y_continuous(limits = c(-50, 1500)) +
+  theme_minimal()  
+```
+
+## Visulaizing the Relationship
+* Fill in the code to create the graph from the previous slide
+
+\scriptsize
+```{r, warning=FALSE, eval = FALSE}
+library(broom)
+dist_sq_augmented <- augment( , )
+
+dist_sq_augmented %>% 
+  mutate(price = PRICE/SQUARE.FEET) %>%     
+ggplot() +
+  geom_point(aes(x = , y = ))+
+  geom_line(aes(x = , y = ), color = ) +
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD/Sq ft.", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  scale_y_continuous(limits = c(-50, 1500)) +
+  theme_minimal()  
+```

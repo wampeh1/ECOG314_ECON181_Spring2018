@@ -1,0 +1,530 @@
+---
+title: "Module 1 Day 3"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+```{r}
+#install.packages("spatstat")
+library(spatstat)
+library(tidyverse)
+library(ggplot2)
+# install.packages("stargazer")
+library(stargazer)
+# install.packages("Hmisc")
+library(Hmisc)
+# install.packages("lubridate")
+library(lubridate)
+```
+
+## Recap last week
+
+Set your working directory
+
+```{r}
+setwd()
+```
+
+* Read in the data file "acs_2016_sample.csv"
+* Calculate the median total income by race, sex, and age
+* Make a line plot with age on the x axis and total_income on the y axis
+* Use race as the color axis and linetype for sex
+* Label your chart appropriately 
+
+```{r}
+acs_2016_cleaned <- 
+  read.csv() %>%
+  rename(state_code = STATEFIP,
+         sex = SEX,
+         age = AGE,
+         race = RACE,
+         hispanic = HISPAN,
+         education = EDUC,
+         employment_status = EMPSTAT,
+         total_income = INCTOT,
+         wage_income = INCWAGE,
+         hrs_worked = UHRSWORK,
+         weeks_worked = WKSWORK2,
+         weight = PERWT,
+         metro = METRO) %>%
+  select(state_code, sex, age, race, hispanic, education, 
+         employment_status, total_income, wage_income, 
+         hrs_worked, weeks_worked, weight, metro) %>%
+  filter(total_income <= 1000000,
+         wage_income <= 1000000,
+         age >= 25,
+         age <= 55,
+         hrs_worked > 0) %>%
+  mutate(sex = ifelse(sex == 1, "Male", "Female"),
+         education = case_when(education <= 5 ~ "No HS Diploma",
+                               education == 6 ~ "HS Diploma",
+                               education %in% c(7,8,9) ~ "Some College",
+                               education == 10 ~ "College Degree",
+                               education == 11 ~ "Graduate Degree"),
+         race = case_when(race == 1 & hispanic == 0 ~ "Non-hispanic White",
+                          race == 1 & (hispanic %in% c(1,2,3,4)) ~ "Hispanic White",
+                          race == 2 ~ "Black",
+                          race == 3 ~ "Native American",
+                          race %in% c(4,5,6) ~ "Asian",
+                          race %in% c(7,8,9) ~ "Other/Multiracial"))
+```
+
+```{r, fig.width=6, fig.height=4}
+acs_2016_cleaned %>%
+  group_by() %>%
+  summarise(median_income = ) %>%
+  ggplot(aes(x = , y = , color = , linetype = )) +
+  geom_line() +
+  labs(x = "Age", 
+       y = "Income",
+       linetype = "Sex",
+       color = "Race",
+       title = "Median Income by Age, Sex, and Race",
+       caption = "Source: 2016 ACS")
+```
+
+## facet_wrap()
+
+```{r, fig.width=6, fig.height=4}
+acs_2016_cleaned %>%
+  group_by() %>%
+  summarise(median_income = ) %>%
+  ggplot(aes(x = age, 
+             y = median_income, 
+             color = sex, 
+             linetype = sex)) +
+  geom_line() +
+  facet_wrap("race") +
+  labs(x = "Age", 
+       y = "Income",
+       linetype = "Sex",
+       color = "Sex",
+       title = "Median Income by Age, Sex, and Race",
+       caption = "Source: 2016 ACS")
+```
+
+Why do you think certain lines are noisier than others?
+
+
+Create a new column in acs_2016_cleaned called rounded age that is the individual age rounded to the nearest 5. (Hint check out the function plyr::round_any()).
+Calculate the mean wage income by rounded_age, sex, and education level.
+Update the x axis so that it goes from 25-55 in 5 year increments
+Update the y axis so that is goes from 0-175,000 in 25,0000 increments
+
+```{r}
+acs_2016_cleaned %>%
+  mutate(rounded_age = plyr::round_any()) %>%
+  group_by() %>%
+  summarise(median_wage = mean()) %>%
+  ggplot(aes(x = , y = , color = )) +
+  geom_line() +
+  facet_wrap("", nrow = 3) +
+  labs(x = "",
+       y = "",
+       title "",
+       color = "") +
+  scale_x_continuous(breaks = seq()) +
+  scale_y_continuous(breaks = seq())
+```
+
+Let's calculate the unweighted and weighted mean income by gender in our acs_2016_cleaned data frame
+
+```{r}
+mean_table <-
+acs_2016_cleaned %>%
+  group_by() %>%
+  summarise(unweighted_mean = mean(, na.rm = T),
+            weighted_mean = wtd.mean(, , na.rm = T))
+
+mean_table
+```
+
+## stargazer()
+
+It is very easy to use! It does most of the work for you
+
+```{r}
+stargazer(acs_2016_cleaned %>%
+          select(age, total_income, 
+                 wage_income, hrs_worked, 
+                 weeks_worked))
+```
+
+If you just run the code it looks like garbage (unless you are fluent in Latex). To get it to compile nicely you need to add a chunk option: `results = 'asis'`
+
+```{r, results = 'asis'}
+stargazer(acs_2016_cleaned %>%
+          select(age, total_income, 
+                 wage_income, hrs_worked, 
+                 weeks_worked))
+```
+
+We can make a table of a data frame by telling stargazer not to make it a summary table. We can turn off the annoying header using `header = FALSE`. We can also set the number of digits to use `digits = 2`
+
+```{r, results = 'asis'}
+stargazer(mean_table, summary = FALSE, header = FALSE)
+```
+
+We can fix up the column names and show a less ridiculous number of digits
+
+```{r}
+mean_table <-
+acs_2016_cleaned %>%
+  group_by(sex) %>%
+  summarise(unweighted_mean = 
+              round(mean(total_income, 
+                         na.rm = T),0),
+            weighted_mean = 
+              round(wtd.mean(total_income, weight, 
+                             na.rm = T),0))
+
+names(mean_table) <- c("Sex", 
+                       "Unweighted Mean", 
+                       "Weighted Mean")
+
+
+```
+
+```{r, results = 'asis'}
+stargazer(mean_table, summary = FALSE, header = FALSE, 
+          rownames = FALSE,
+          title = "Mean Income by Sex")
+
+```
+
+Please make a summary statistics table for the weighted median income by gender
+
+* The weight median function is `weighted.median()`
+* Use stargazer to make it beautiful
+* Give it an appropriate title
+
+```{r}
+
+```
+
+
+
+Let's make a quick chart of the distribution of income by gender and then make if fabulous
+
+* What geom should you use? What are the aesthetics it needs?
+* To start make a density chart of total income by gender. 
+* Be sure to title and label your chart appropriately
+
+```{r, echo = FALSE, fig.width=6, fig.height=4}
+inc_sex_plot <-
+acs_2016_cleaned %>%
+  ggplot(aes(x = , fill = , color = )) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Total Income",
+       y = "Density",
+       fill = "Sex",
+       color = "Sex",
+       title = "Distribution of Income by Gender",
+       caption = "Source: 2016 ACS")
+
+inc_sex_plot
+```
+
+We can use the scale_color_manual function to change the colors. 
+```{r, fig.width=6, fig.height=3}
+inc_sex_plot + 
+  scale_color_manual(values = c("dodger blue", "orange")) + 
+  scale_fill_manual(values = c("dodger blue", "orange"))
+```
+
+
+Make a fancy chart of the distribution of total income by education level
+* label your chart appropriately
+* use a non-base theme and make things colorful
+
+
+```{r}
+acs_2016_cleaned %>%
+  ggplot(aes(x = , fill = , color = )) +
+  geom_density(alpha = 0.5) +
+  labs(x = "",
+       y = "",
+       fill = "",
+       color = "",
+       title = "",
+       caption = "Source: 2016 ACS") + 
+  scale_color_manual(values = ) + 
+  scale_fill_manual(values = )
+```
+
+
+## unique()
+
+## Urban vs. rural
+
+I want to know the average total income by race for people in metro areas and outside of metro areas (rural)
+
+## unique()
+
+What are the values of the metro variable?
+
+* We can find out using the `unique()` function
+* But what does it do?
+
+```{r}
+unique(c("A", "B", "A", "B", "C", "C", "D"))
+```
+
+## unique()
+
+How many categories of metro status are there?
+
+```{r}
+unique(acs_2016_cleaned$metro)
+```
+
+## Urban vs. rural
+
+I want to know the average total income by race for people in metro areas and outside of metro areas (rural)
+
+* First filter to people we know for sure are not in a metro area or in the center or outskirts of a metro area. 
+    + 0		Not identifiable
+    + 4		Central / Principal city status unknown
+
+* Then recode the metro area 
+    + 1	~ "Rural"
+    + 2	~ "Central / Principal City"
+    + 3	~ "Outside Central / Principal City"
+
+```{r}
+acs_2016_cleaned <-
+  acs_2016_cleaned %>%
+  filter() %>%
+  mutate(metro = case_when(metro ==  ~ "Rural",
+                           metro ==  ~ "Central / Principal City",
+                           metro ==  ~ "Outside Central / Principal City"))
+```
+
+
+* Now calculate the average total income by race and metro status
+* Be sure to take the weighted mean
+* Make a faceted bar chart with race on the x axis and mean income on the y axis
+* Use metro as the faceting variable
+* Be sure to pick a theme and use scale_x_ to keep the labels from overlapping
+
+```{r, echo = FALSE, fig.width=6, fig.height=4}
+acs_2016_cleaned %>%
+  group_by() %>%
+  summarise(mean_income = wtd.mean(, , na.rm = F)) %>%
+  ggplot(aes(x = race, y = mean_income, color = race, fill = race)) +
+  geom_col(alpha = 0.5) + 
+  facet_wrap("", ncol = 1) + 
+  labs(x = "",
+       y = "",
+       title = "",
+       color = "",
+       fill = "") +
+  theme_minimal() +
+  scale_x_discrete(labels= c("Asian", "Black", "Hispanic \nWhite", "Native \nAmerican", "Non-hispanic \nWhite", "Other/\nMultiracial")) +
+  guides(color = FALSE,
+         fill = FALSE)
+```
+
+* Make the same chart, faceting on race.
+
+```{r, echo = FALSE, fig.width=6, fig.height=4}
+acs_2016_cleaned %>%
+  group_by() %>%
+  summarise(mean_income = wtd.mean(, , na.rm = F)) %>%
+  ggplot(aes(x = race, y = mean_income, color = race, fill = race)) +
+  geom_col(alpha = 0.5) + 
+  facet_wrap("", ncol = 1) + 
+  labs(x = "",
+       y = "",
+       title = "",
+       color = "",
+       fill = "") +
+  theme_minimal() +
+  scale_x_discrete(labels= c("Asian", "Black", "Hispanic \nWhite", "Native \nAmerican", "Non-hispanic \nWhite", "Other/\nMultiracial")) +
+  guides(color = FALSE,
+         fill = FALSE)
+```
+
+## Dates
+
+We're going to learn how to make this chart.
+
+```{r, fig.width=4.5, fig.height=4.5*0.666, fig.align='center',echo=FALSE}
+fred_median_earnings <- 
+  read.csv("fred_median_earnings.csv", 
+           stringsAsFactors = F)
+fred_median_earnings %>%
+  mutate(Date = as.Date(Date, format("%m/%d/%Y"))) %>%
+  ggplot(aes(x = Date, y = Median_earnings)) +
+  geom_line() +
+  labs(x = "Date", 
+       y = "Weekly Earnings",
+       title = "Real Median Weekly Earnings over Time",
+       caption = "Source: FRED") +
+  scale_x_date(date_breaks = "2 years", date_labels = "%Y") +
+  theme_minimal()
+```
+
+## Dates
+
+* Dates are very special in R
+* R understands dates of the form:
+
+```{r}
+as.Date("2012-08-30")
+```
+* We can do standard arithmetic on the dates:
+
+```{r}
+as.Date("2012-08-30") - 3
+```
+* What happens if we subtract two dates from each other?
+
+## Dates
+
+But what if our date is not in that format? What if we are importing data?
+
+```{r}
+as.Date("08/30/2012", format = "%m/%d/%Y")
+as.Date(41149, origin = "1900-01-01")
+```
+
+* %d -> Day
+* %m -> Numeric Month 
+* %b -> Abbreviated Month
+* %B -> Full Month
+* %y -> 2-digit year
+* %Y -> 4-digit year
+
+## Dates
+
+Convert the following to date objects
+
+* "Jan 1, 2018" 
+* "31/1/18"
+```{r}
+
+```
+
+## Dates
+
+We can also make sequences of dates
+```{r}
+# First day of every month
+seq(as.Date("2018-01-01"), 
+    as.Date("2018-04-01"), 
+    by = "months")
+```
+```{r}
+seq(as.Date("2018-01-01"), 
+    as.Date("2018-01-05"), 
+    by = "2 days")
+```
+
+## Dates
+
+We can also subtract from sequences of dates!
+```{r}
+# Last day of every month
+seq(as.Date("2018-01-01"), 
+    as.Date("2018-04-01"), 
+    by = "months") - 1
+```
+
+## Dates
+
+Let's look at time series of real median weekly earnings:
+
+* Read in the file fred_median_income.csv
+* What columns are in the dataframe?
+
+```{r}
+fred_median_earnings <- 
+  read.csv(, 
+           stringsAsFactors = F)
+```
+
+## Dates
+
+* Convert the date column to a date object
+* Make a line chart with the date on the x axis and Median_earnings on the y axis
+* Be sure to label your chart correctly
+* Use the scale_x_dates() function to label every 2 years
+
+## Dates
+
+```{r, fig.width=6, fig.height=4, echo=FALSE}
+fred_median_earnings %>%
+  mutate(Date = as.Date(Date, format())) %>%
+  ggplot(aes(x = , y = )) +
+  geom_line() +
+  labs(x = "", 
+       y = "",
+       title = "",
+       caption = "Source: FRED") +
+  scale_x_date(date_breaks = "", date_labels = "") +
+  theme_minimal()
+```
+
+* How have average weekly earnings recovered since the great recession? How have they changed since 2000?
+
+## Dates: `lubridate`
+
+* As you can see, we are currently working with quarterly data. 
+* Let's convert this to annual data using the package `lubridate`. 
+* `lubridate` makes it easy to extract parts of a date from date objects.
+
+## Dates: `lubridate`
+
+* In this case, we will need to extract the year from our date column.
+
+```{r}
+library(lubridate)
+date <- as.Date("2018-02-09")
+
+# What is the year of this date?
+year(date)
+
+# What is the month of this date?
+month(date)
+```
+
+## Dates: `lubridate`
+
+* Create a new column of years
+* Use `group_by()` and `summarise()` to create annual averages of median earnings
+* Create a line chart exactly like the one before
+* HINT: you won't be able to use `scale_x_date()` on the year variable
+
+## Dates: `lubridate`
+
+```{r, fig.width=6, fig.height=4, echo=FALSE}
+fred_median_earnings %>%
+  mutate(Date = ,
+         year = ) %>%
+  group_by() %>%
+  summarise(Median_earnings = ) %>%
+  ggplot(aes(x = , y = )) +
+  geom_line() +
+  labs(x = "", 
+       y = "",
+       title = "",
+       caption = "Source: FRED") +
+  theme_minimal()
+```
+
+* When might it be useful to aggregate data to a lower frequency?
+
+## Housekeeping
+
+* REMINDER: your first project assignment is due next week (Friday, 2/16).
+* This is your **project proposal** document.
+
+## Housekeeping
+
+* Homework for the entire module is in one document, **Module_1_STUDENT.Rmd**.
+* Look under the "Day 1", "Day 2", and "Day 3" headers.
+* After today, you will work on the "Day 3" portion of the document.

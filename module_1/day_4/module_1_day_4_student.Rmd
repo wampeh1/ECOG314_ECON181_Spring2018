@@ -1,0 +1,274 @@
+---
+title: "Module 1 Day 3"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+```{r}
+# install.packages("plyr")
+library(plyr)
+library(dplyr)
+library(ggplot2)
+# install.packages("stargazer")
+library(stargazer)
+# install.packages("Hmisc")
+library(Hmisc)
+# install.packages("lubridate")
+library(lubridate)
+# install.packages("ggthemes")
+library(ggthemes)
+```
+
+## Recap last week
+
+Set your working directory
+
+```{r}
+setwd()
+```
+
+* Read in the data file "fred_median_income.csv"
+* Convert the data column from a character to a Date
+* Filter to data post 2005
+* Make a scatter plot  with the date on the x axis and median_hh_income on the y axis
+* Be sure to label your chart appropriately
+* Use the scale_x_dates() function to label every 2 years
+
+```{r}
+fred_median_income <- 
+  read_csv()
+
+fred_median_income %>%
+  mutate(date = ) %>%
+  filter() %>%
+  ggplot() +
+  geom_point() +
+  labs(x = "Date", 
+       y = "Median Household Income",
+       title = "Real Median Household Income over Time",
+       caption = "Source: FRED") +
+  scale_x_date() 
+
+```
+
+What do we mean when we say "real" income?
+
+## Shrinking Real Incomes
+
+* Use the lag() function to calculate the percent change in household income
+* Add a new column called shrunk that "Yes" if the percent change is less than zero and "No" otherwise
+* Make a bar chart of the percent change in median household income since 2000
+* Use the variable shrunk as the fill axis
+* Use geom_hline() to add a horizontal line at y = 0 to highlight years where real income shrunk
+* Turn off the fill axis by using guides(fill = FALSE)
+* Use scale fill manual so that when income shrinks the point is red
+
+
+```{r, fig.width=6, fig.height=3.5, echo=FALSE}
+fred_median_income %>%
+  mutate(date = ),
+         median_hh_income_chng = ,
+         shrunk = ifelse( , , )) %>%
+  filter(date >= ) %>%
+  ggplot() +
+  geom_col() +
+  labs(x = "Date", 
+       y = "Percent Change",
+       title = "Changes Real Median Household Income over Time",
+       caption = "Source: FRED") +
+  scale_x_date() +
+  geom_hline(yintercept = ) +
+  guides(fill = FALSE) +
+  scale_fill_manual(values = c())
+
+```
+
+## Recap last week
+
+* Read in the data file "acs_2016_sample.csv"
+* Apply our standard transformations
+* Create a new data frame called acs_mean_median that is the weighted mean and median income by race and sex
+* Add a column that is the difference between the mean and median income 
+* Which group has the biggest difference? Which the smallest?
+
+```{r}
+acs_2016_transformed <- 
+  read.csv("acs_2016_sample.csv") %>%
+  rename(state_code = STATEFIP,
+         sex = SEX,
+         age = AGE,
+         race = RACE,
+         hispanic = HISPAN,
+         education = EDUC,
+         employment_status = EMPSTAT,
+         total_income = INCTOT,
+         wage_income = INCWAGE,
+         hrs_worked = UHRSWORK,
+         weeks_worked = WKSWORK2,
+         weight = PERWT,
+         metro = METRO) %>%
+  select(state_code, sex, age, race, hispanic, education, 
+         employment_status, total_income, wage_income, 
+         hrs_worked, weeks_worked, weight, metro) %>%
+  mutate(sex = ifelse(sex == 1, "Male", "Female"),
+         education = case_when(education <= 5 ~ "No HS Diploma",
+                               education == 6 ~ "HS Diploma",
+                               education %in% c(7,8,9) ~ "Some College",
+                               education == 10 ~ "College Degree",
+                               education == 11 ~ "Graduate Degree"),
+         race = case_when(race == 1 & hispanic == 0 ~ "Non-hispanic White",
+                          race == 1 & (hispanic %in% c(1,2,3,4)) ~ "Hispanic White",
+                          race == 2 ~ "Black",
+                          race == 3 ~ "Native American",
+                          race %in% c(4,5,6) ~ "Asian",
+                          race %in% c(7,8,9) ~ "Other/Multiracial"),
+        weeks_worked = case_when(weeks_worked == 1 ~ 13,
+                                 weeks_worked == 2 ~ 26,
+                                 weeks_worked == 3 ~ 39,
+                                 weeks_worked == 4 ~ 47,
+                                 weeks_worked == 5 ~ 49,
+                                 weeks_worked == 6 ~ 52)) %>%
+  filter(total_income < 9999999)
+```
+
+
+```{r}
+acs_mean_median <-
+  
+```
+
+* Going back to the whole sample filter to only those groups
+* Use the paste function to create a new variable called group that is paste(sex, race)
+* Make a density plot of the income of the two groups
+* Set the alpha parameter to 0.5
+
+## Recap last week
+
+```{r}
+acs_2016_transformed %>%
+  filter(() | ()) %>%
+  mutate(group = paste()) %>%
+  ggplot() +
+  geom_density() +
+  labs(x = "Total Income",
+       y = "Density",
+       color = "",
+       fill  = "",
+       caption = "Source: 2016 ACS")
+```
+What does it mean for the distribution if there is a big difference between the mean and median?
+
+## Prepping the data
+
+Create a new data frame acs_2016_cleaned which is acs_2016_transformed filtered to people:
+
+* Between 18 and 65
+* In the workforce
+* With a total wage <= 1,000,000
+* Worked more than 0 hours a week
+* Worked more than 0 weeks
+
+* Add a column for hourly wage
+
+What fraction of the original observations do we have?
+
+```{r}
+acs_2016_cleaned <-
+
+```
+
+## Preping the data
+
+Select the columns 
+ 
+ * wage_income, age, hrs_worked , weeks_worked, and hourly_wage
+ 
+ Make a stargazer summary table
+
+```{r, results='asis'}
+stargazer(acs_2016_cleaned %>%
+          select(),
+          header = F, rownames = F, title = "Summary Statistics", omit.summary.stat = "n")
+```
+
+
+## OLS Regression 
+
+* Try it out! Run a simple regression of salary on ages 
+
+```{r}
+baseline_model <- lm()
+```
+
+
+How do we add weights?
+
+```{r}
+baseline_model <- lm(, weights = weight,
+                     acs_2016_cleaned)
+```
+
+## stargazer()
+
+* Once again, we use stargazer to look at the results
+
+```{r}
+
+```
+
+
+## The Broom Package
+
+* Let's try it out!
+* tidy, augment, and glance at the results of the baseline model
+* How can we use the augment function to keep all of our original columns?
+
+```{r}
+tidy()
+
+glance()
+
+
+baseline_model_augmented <- augment(baseline_model, acs_2016_cleaned)
+```
+
+## Improving our model
+
+* Let's make a plot of the distribution of residuals by gender.
+* What do we learn from this chart?
+
+```{r}
+ggplot() +
+geom_boxplot(aes(x = , y = .resid)) +
+ylim(c(-10,10)) +
+labs(x = "Residual",
+     y = "Density",
+     title = "Distribution Residuals by Gender",
+     color = "") 
+```
+
+## Improving our model
+* Let's update the code for our model:
+
+```{r}
+improved_model <- lm(hourly_wage ~ age + sex, 
+                     weights = weight,
+                     acs_2016_cleaned)
+```
+
+* It's real easy to compare multiple models with stargazer()
+```{r, results='asis'}
+stargazer(baseline_model, improved_model)
+```
+
+## Put my models to shame
+
+* Pair up!
+* Take 15 - 20 mins to improve on the models we have done so far.
+* I want to see plots that explain why you are adding in variables
+* I want to see beautiful regression output tables
+* I want you to spend 5 minutes writing up a post on piazza that includes a graph, a table, and a brief explanation of your model
+  

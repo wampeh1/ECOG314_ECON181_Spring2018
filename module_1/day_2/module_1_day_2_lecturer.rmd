@@ -1,0 +1,449 @@
+---
+title: "Module 1 Day 2"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+## Recap last week
+
+Set your working directory
+
+```{r}
+setwd(~/Module1.Day2)
+```
+
+Read in the data file "acs_2016_age.csv"
+
+```{r, echo = FALSE}
+acs_2016_age <- read.csv("acs_2016_age.csv")
+```
+
+Create a new data frame filtered to ages between 25-55
+
+```{r}
+acs_2016_age_filtered <- filter(acs_2016_age, AGE >= 25 & AGE <= 55)
+```
+
+Make a line plot with AGE on the x axis and INCTOT on the y axis. Label your chart appropriatly 
+
+```{r}
+ggplot(data = acs_2016_age_filtered) +
+  geom_line(aes(x = AGE, y = INCTOT)) +
+  labs(x = "Age",
+       y = "Total Income",
+       title = "Average Total Income by Age (25-55)",
+       caption = "Source: 2016 ACS")
+```
+
+Add a variable to the original data frame that is the gap between total and wage income
+
+```{r}
+acs_2016_age_mutated <- mutate(acs_2016_age, inc_gap = INCTOT - INCWAGE)
+```
+
+Make a line plot with AGE on the x axis and inc_gap on the y axis, Label your chart appropriatly.
+
+```{r, echo = FALSE, fig.width=6, fig.height=4}
+ggplot(data = acs_2016_age_mutated) +
+  geom_line(aes(x = AGE, y = inc_gap)) +
+  labs(x = "Age",
+       y = "Total - Wage Income",
+       title = "Average Difference between Total and Wage Income by Age",
+       caption = "Source: 2016 ACS")
+```
+
+
+## rename()
+
+Start by reading in "acs_2016_sample.csv"
+
+```{r}
+acs_2016_sample <- read_csv("acs_2016_sample.csv")
+```
+
+Using the glimpse(), head(), or str() function look at the variable names
+
+```{r}
+glimpse(acs_2016_sample)
+
+```
+
+Create a new data frame called acs_2016_cleaned and change the names:
+
+* STATEFIP -> state_code
+* SEX -> sex
+* AGE -> age
+* RACE -> race
+* HISPAN -> hispanic
+* EDUC -> education
+* EMPSTAT -> employment_status
+* INCTOT -> total_income
+* INCWAGE -> wage_income
+* UHRSWORK -> hrs_worked
+* WKSWORK2 -> weeks_worked
+
+```{r, echo = FALSE}
+acs_2016_cleaned <-
+  rename(acs_2016_sample,
+         state_code = STATEFIP,
+         sex = SEX,
+         age = AGE,
+         race = RACE,
+         hispanic = HISPAN,
+         education = EDUC,
+         employment_status = EMPSTAT,
+         total_income = INCTOT,
+         wage_income = INCWAGE,
+         hrs_worked = UHRSWORK,
+         weeks_worked = WKSWORK2)
+```
+
+
+## select()
+
+From acs_2016_cleaned select:
+
+* state_code
+* sex
+* age
+* race
+* hispanic
+* education
+* employment_status
+* total_income
+* wage_income
+* hrs_worked
+* weeks_worked
+
+```{r, echo = FALSE}
+acs_2016_cleaned <-
+  select(acs_2016_cleaned,
+         state_code, sex, age, race, hispanic, education, 
+         employment_status, total_income, wage_income, 
+         hrs_worked, weeks_worked)
+```
+
+
+## filter()
+
+Filter to observations where:
+
+* total_income <= 1,000,000
+* wage_income <= 1,000,000
+* age >= 25 & age <= 55
+* hrs_worked > 0
+
+```{r,echo = FALSE}
+acs_2016_cleaned <-
+  filter(acs_2016_cleaned,
+         total_income <= 1000000,
+         wage_income <= 1000000,
+         age >= 25,
+         age <= 55,
+         hrs_worked > 0)
+```
+
+We can begin to get an understanding of the variables in out data frame using the summary() function.
+
+```{r}
+summary(acs_2016_cleaned)
+```
+
+
+## mutate(), ifelse()
+
+Using mutate() and ifelse() recode the sex variable so that 
+
+* 1 -> "Male"
+* 2 -> "Female"
+
+```{r,echo = FALSE}
+acs_2016_cleaned <-
+  mutate(acs_2016_cleaned,
+         sex = ifelse(sex == 1, "Male", "Female"))
+```
+
+## Mean Income by Sex
+
+A simple question: What is the average income for men?
+
+* Create a new data frame that only contains observations for men
+* select the column total_income
+* find the mean() and median()
+
+## Mean Income by Sex
+
+```{r}
+male_data <- filter(acs_2016_cleaned, sex == "Male") # only rows that are male
+
+male_data <- select(male_data, total_income) # we are interested in a single column: Income
+
+mean(male_data$total_income, na.rm = T) # Our summary statistic, ignore NA values
+median(male_data$total_income, na.rm = T)
+```
+
+What does it mean that our average income and our median income are so different? Why is the average income so much higher?
+
+## %>%
+
+This is not an efficient way to write this code. To write more efficient code we can use nested functions f(g(x))
+
+```{r}
+nested_data <- select(filter(acs_2016_cleaned, sex == "Male"), total_income)
+
+mean(nested_data$total_income, na.rm = TRUE)
+```
+
+This is still not great. Luckily we have another solution, the pipe operator: `%>%`
+
+```{r}
+pipe_data <- 
+  acs_2016_cleaned %>% 
+  filter(sex == "Male") %>% 
+  select(total_income)
+
+mean(nested_data$total_income, na.rm = T)
+```
+
+
+```{r}
+seq(25, 30, 1)
+25 %>% seq(30, 1) # The same as seq(25, 30, 1)
+30 %>% seq(25, ., 1) # The same as seq(25, 30, 1)
+```
+
+* Using the %>% operator calculate the mean income for women
+
+```{r, echo = FALSE}
+female_data <-
+  acs_2016_cleaned %>% 
+  filter(sex=="Female") %>% 
+  select(total_income)
+
+mean(female_data$total_income, na.rm = T)
+```
+
+## summarize()
+ 
+Use the summarize() function to calculate the mean and median income for the male_data dataframe. Don't forget about (na.rm = T)
+
+```{r}
+male_data %>%
+  summarise(mean_inc = mean(total_income, na.rm = T),
+            median_inc = median(total_income, na.rm = T))
+```
+
+Now do the same calculation but for the female_data data frame.
+
+```{r, echo = FALSE}
+female_data %>%
+  summarise(mean_inc = mean(total_income, na.rm = T),
+            median_inc = median(total_income, na.rm = T))
+```
+
+
+## group_by(), summarise()
+
+```{r}
+acs_2016_cleaned %>%
+  group_by(sex) %>%
+  summarise(mean_inc = mean(total_income, na.rm = T),
+            median_inc = median(total_income, na.rm = T))
+```
+
+* Now let's go back and clean up our data for race and education so that we can calculate some more interesting summary stats.
+
+## mutate(), ifelse(), case_when()
+
+Nested ifelse statements get super messy very quickly! Better to use case_when:
+
+```{r}
+acs_2016_cleaned <- 
+  acs_2016_cleaned %>%
+  mutate(education = case_when(education <= 5 ~ "No HS Diploma",
+                               education == 6 ~ "HS Diploma",
+                               education %in% c(7,8,9) ~ "Some College",
+                               education == 10 ~ "College Degree",
+                               education == 11 ~ "Graduate Degree"))
+```
+
+Let's use the same function to recode the race variable:
+
+RACE		Race [general version]
+
+* 1		White
+* 2		Black/African American/Negro
+* 3		American Indian or Alaska Native
+* 4		Chinese
+* 5		Japanese
+* 6		Other Asian or Pacific Islander
+* 7		Other race, nec
+* 8		Two major races
+* 9		Three or more major races
+
+HISPAN		Hispanic origin [general version]
+
+* 0		Not Hispanic
+* 1		Mexican
+* 2		Puerto Rican
+* 3		Cuban
+* 4		Other
+* 9		Not Reported
+
+I propose the following categories:
+
+* race == 1 & hispanic == 0 ~ "Non-Hispanic White"
+* race == 1 & hispanic %in% c(1,2,3,4) ~ "Hispanic White"
+* race == 2 ~ "Black"
+* race == 3 ~ "Native American"
+* race %in% c(4,5,6) ~ "Asian"
+* race %in% c(7,8,9) ~ "Other/Multiracial"
+
+Code up these categories using case_when
+
+```{r, echo = FALSE}
+acs_2016_cleaned <- 
+  acs_2016_cleaned %>%
+  mutate(race = case_when(race == 1 & hispanic == 0 ~ "Non-hispanic White",
+                          race == 1 & hispanic %in% c(1,2,3,4) ~ "Hispanic White",
+                          race == 2 ~ "Black",
+                          race == 3 ~ "Native American",
+                          race %in% c(4,5,6) ~ "Asian",
+                          race %in% c(7,8,9) ~ "Other/Multiracial"))
+```
+
+## group_by(), summarise()
+
+Now that we have our data all cleaned up that calculate some summary data and plot it:
+
+* Create a data frame called wage_age that contains the median wage income by age and sex
+* What grouping variables should you use?
+* Make a line plot of the data with age on the x axis, median_wage on the y axis and sex on the color axis
+* Be sure to label your chart appropriatly
+
+
+```{r, echo = FALSE, fig.width=6, fig.height=4}
+wage_age <-
+acs_2016_cleaned %>%
+  group_by(age, sex) %>%
+  summarise(median_wage = median(wage_income, na.rm = T))
+
+
+ggplot(wage_age, aes(x = age, y = median_wage, color = sex)) +
+  geom_line() +
+  labs(x = "Age", 
+       y = "Median Wage",
+       color = "Sex",
+       title = "Median Wage by Age and Sex",
+       caption = "Source: 2016 ACS")
+```
+
+
+Now that we have our data all cleaned up that calculate some summary data and plot it:
+
+* Create a data frame called wage_education that contains the median wage income by education level and sex
+* What grouping variables should you use?
+
+We want to make a bar plot of this data
+
+```{r, echo = FALSE}
+wage_eduction <-
+  acs_2016_cleaned %>%
+  group_by(education, sex) %>%
+  summarise(median_income = median(wage_income))
+```
+
+
+## geom_col()
+
+```{r, fig.width= 6, fig.height=3}
+gds_plot <- wage_eduction %>% 
+    ggplot(aes(x = education, y = median_income, fill = sex)) +
+    geom_col(position = "dodge")
+
+gds_plot 
+```
+
+What are some things we will want to change about this chart?
+
+## scale_x_discrete()
+
+```{r, fig.width= 6, fig.height=3}
+gds_plot_x <- 
+  gds_plot +
+  scale_x_discrete(labels = c("College Degree" = "College \nDegree",
+                              "Graduate Degree" = "Graduate \nDegree",
+                              "HS Diploma" = "HS Diploma",
+                              "No HS Diploma" = "No \nHS Diploma",
+                              "Some College" = "Some \nCollege"),
+                     limits = c("No HS Diploma", "HS Diploma", "Some College",
+                                "College Degree","Graduate Degree"))
+
+
+gds_plot_x 
+```
+
+## scale_y_continous()
+
+Now I want to change the y scale to go in \$10,000 increments instead of \$25,000 increments. How?
+
+* Using the scale_y_continous() function
+* The argument we want to use is breaks which we want to set to a sequence
+
+```{r}
+gds_plot_y <- gds_plot_x +
+  scale_y_continuous(breaks = seq(0, 90000, 10000)) +
+  labs(x = "Age", 
+       y = "Median Wage",
+       color = "Sex",
+       title = "Median Wage by Education and Sex",
+       caption = "Source: 2016 ACS")
+```
+
+* Please also add appropriate axis labels and a title
+
+## Recap Exersise
+
+Make the same plot but instead of using sex as the color variable use race. You will need to:
+
+* calculate the median wage per hour for each racial group for each education level using mutate(), group_by() and summarise()
+* Assume a person's hours is how much they work per week
+* use geom_col() to create a bar chart
+* use scale_x_discrete() and scale_y_continous() to fix up the axes
+* be sure to include lable and a title
+
+## Recap Exersise
+
+```{r, echo = FALSE,fig.width=6, fig.height=4}
+acs_2016_cleaned %>%
+  mutate(wage_per_hour = wage_income/(hrs_worked * weeks_worked)) %>%
+  group_by(education, race) %>%
+  summarise(median_wage = median(wage_per_hour, na.rm = T)) %>%
+  mutate(race = factor(race, levels = c("Non-hispanic White","Asian", "Hispanic White","Black", 
+                                  "Native American", "Other/Multiracial"))) %>%
+  ggplot(aes(x = education, y = median_wage, fill = race)) +
+  geom_col(position = "dodge") + 
+  scale_y_continuous(breaks = seq(0, 375, 75)) +
+  scale_x_discrete(labels = c("College Degree" = "College \nDegree",
+                              "Graduate Degree" = "Graduate \nDegree",
+                              "HS Diploma" = "HS Diploma",
+                              "No HS Diploma" = "No \nHS Diploma",
+                              "Some College" = "Some \nCollege"),
+                   limits = c("No HS Diploma", "HS Diploma", "Some College",
+                              "College Degree","Graduate Degree")) +
+  labs(x = "Education", 
+       y = "Median Hourly Wage",
+       fill = "Race/Ethnicity",
+       title = "Median Hourly Wage by Race and Education Level",
+       caption = "Source: 2016 ACS")
+
+```
+
+

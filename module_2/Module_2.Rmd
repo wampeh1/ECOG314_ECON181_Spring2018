@@ -1,0 +1,1426 @@
+---
+title: "Module 2"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, error = T,
+                      fig.height = 3.5,
+                      fig.width = 5)
+```
+
+Goals of module 2:  
+* Can have this be a 4 day module
+
+* Learn for loops
+    * Reading in all of the Redfin data  
+        * If statements as well
+* Joining data
+    * bind_rows
+        * concatenating the property files
+        * concatenating the location files
+    * Joining
+        * joining the location and property data.frames
+* String manipulation
+    * Cleaning some of the column names
+        * splitting (separate the city from the state)
+        * Cleaning (match any misspellings and reassign)
+    * %in%
+* Date manipulation
+    * Converting dates correctly - formats
+    * Doing date math (finding time on market)
+        * days on market
+        * could find weeks on market as well (student exercise)
+* Custom functions
+    * Rewriting the `sum()` function
+    * Another practice instance of rewriting a function
+    * Writing a custom function (to find distance from metro station to house)
+* More plotting
+    * Themes
+    * Different scales
+        * size and shape?
+        * date scales
+    * How to analyze what is a "good" plot
+* Regression
+    * Variable transformation
+        * Log of price
+        * price per square foot (?)
+        * Interaction effects (?) - may not find any significant ones
+        
+# Day One
+
+For the past month we've looked at income data using the American Community Survey to see how incomes in California differ for different subsets of the population. This module will take a look at a different type of economic question, home prices. We will examine how proximity to a metro station impacts the sale price of homes using data collected from Redfin, a Seattle real-estate company.
+
+Once you have downloaded all data for this module, let's set our working directory and take a look at the files that we have available.
+
+```{r, message = F}
+invisible(library(plyr))
+invisible(library(tidyverse))
+invisible(library(dplyr))
+
+# Set your working directory to be the mod2 folder
+# setwd()
+list.files("Data/")
+```
+
+So, in looking at our files names, we have a set of files that deal with "property," a set of files that deal with "location" data, and an excel file that doesn't match either pattern, "Metro_lat_lon.xlsx".
+
+Let's read in one of our property files.
+
+```{r}
+property_data <- read.csv("Data/property_redfin_01.csv")
+names(property_data)
+```
+
+This file seems to be about home sales and includes variables about how large the house is, when it was sold, when it was put on the market, etc...
+
+We can see the data using the `View()` function.
+
+```{r}
+#View(property_data)
+```
+
+**Read in one of our location files, what are the names of the columns in the file? What does this data look like? Are there any columns that exist in both our property and location data?**
+
+```{r}
+# location_data <- read.csv()
+```
+
+Maybe these files belong somehow together. To check this we should read in another one of our property files, does it have the same columns as our other property data file?
+
+```{r}
+property_data2 <- read.csv("Data/property_redfin_02.csv")
+names(property_data)
+identical(names(property_data2), names(property_data))
+```
+
+This is promising, our files have the same columns, this means we can stick one of top of the other.
+
+```{r}
+nrow(property_data)
+nrow(property_data2)
+
+property_data_bound <- bind_rows(property_data, property_data2)
+nrow(property_data_bound) # Sum of the rows of the two tables
+
+```
+
+**Are our location files also the same? Read in a second location file and test if it has the same columns as the first one. If it does, create a new table, location_data_bound which has the data for both tables in it.**
+
+```{r}
+#location_data2 <- read.csv()
+
+#location_data_bound <- 
+```
+
+Now we need to figure out a way to bind our files together so that we can go from 8 property and 8 location data frames into a single property data frame and single location data frame. 
+
+This is the perfect opportunity to use a for loop!
+
+## for loops
+
+Oftentimes when we are preparing data for analysis, we will have to repeat a task or calculation multiple times. If we only have to do this four or five times copy and pasting or retyping our code may not be too inconvenient, but what if we had to run a similar chunk of code 20 or even 1,000 times? Loops are constructs that allow us to automate these kinds of repetitive tasks, saving us time and lines of code.
+
+If we know how many times we would like to run a particular chunk of code or we have a list we would like to iterate over we may utilize a for loop.
+
+![Operation of for loop](for_loop.png)
+
+For loops have three key components:  
+* a variable that is used within the code of the loop
+* a list of numbers or elements that the loop iterates over
+* the code that is to be executed in the loop
+
+In R, for loops take the following form:
+
+for(*variable* in *index*) {
+    *code to be executed*
+}  
+
+Let's create a simple loop that squares every number from 1 to 10 and printing the results to the console.
+
+```{r}
+for(i in 1:10){
+    print(i^2) 
+}
+```
+
+Pretty simple! For loops can iterate over many different types of lists. For example, let's try printing the names of all of the months in the year.
+
+```{r}
+months <- c("January","February", "March", "April", "May", "June", "July", "August", "September", "October","November","December")
+
+for(mon in months){
+  print(mon)
+}
+```
+
+
+Not too bad! Ideally, we'll be using these loops to do more than just print out results. We can create loops that save and update objects without overwriting loops if we are careful. The Fibonacci sequence is a series of numbers where any number can be found by adding the previous two numbers together. We can see the Fibonacci sequence (or more specifically, the Fibonacci spiral) in hurricanes, galaxies, and even Rennaisance art! Below we have a function that calculates 15 numbers in the Fibonacci sequence.
+
+```{r}
+fibSeq <- c(0, 1)
+print(fibSeq)
+
+for(i in 3:15) {
+ fibNext <- fibSeq[i - 1] + fibSeq[i - 2]
+ fibSeq <- c(fibSeq, fibNext)
+ print(fibSeq)
+}
+```
+
+Notice how we initialize the vector first and then once we are inside the loop, we calculate the next number then add it to the vector. Our helper variable, `fibNext`, allows us to calculate the next number in the series without overwriting the vector. 
+
+**Let's try converting a bunch of substrings in a vector into a single string using a for loop.**
+
+```{r, answer}
+string_vec <- c("Never","Gonna", "Give", "You", "Up", "Never", "Gonna", "Let", "You", "Down")
+
+## initialize the variable
+rr = NULL
+
+for(sv in string_vec){
+  rr = paste(rr,sv)
+}
+
+print(rr)
+```
+
+However, our current loops are less than ideal. Sometimes we would like to perform one action on certain elements of our list and a separate action on the other elements. To save time and lines of code, we want our code to make these kinds simple decisions without our direction. Enter if/else statements.
+
+## If Else Statements
+
+![Operation of If/Else Statement](if_else_statement.png)
+
+Previously we have used `ifelse()` to help make simple decisions when recoding our variables with `mutate`. If/else statements are constructs that function in a similar manner to `ifelse()` and are applied to segments of code *outside* of functions. In R, an if/else statement takes the following form:
+
+if( *logical argument*){
+  *code to be executed*
+} else{
+  *code to be executed*
+}
+
+Instead of printing out the square of all of the numbers from 1 to 10, why don't we try printing out whether each of these numbers are even or odd.
+
+```{r}
+for(i in 1:10){
+  if(i %% 2 == 0){ # %% is the modulous operator --- we are finding the remainder!
+    print(paste(i, "is EVEN"))
+  } else{
+    print(paste(i, "is ODD"))
+  }
+}
+```
+
+Now our code can be much more flexible! We can program our code to have even greater flexibility by chaining together if/else statements to test multiple conditions. Suppose we have a list of test scores that we want to assign letter grades.
+```{r}
+test_scores <- c(85,55,67,73,92,94,99,100,87)
+
+for(grade in test_scores){
+  if(grade >= 90){
+    print("A")
+  } else if(grade >= 80) {
+    print("B")
+  } else if (grade >= 70) {
+    print("C")
+  } else if (grade >= 60) {
+    print("D")
+  } else {
+    print("F")
+  }
+}
+
+```
+
+Our loop checks each condition one by one, and if that condition is met it moves on to the next one until we reach the final condition. For example, 85 is not greater than 90, so then our program checks if 85 is greater than 80. It turns out that 85 *is* greater than 80, therefore our program assigns this student a B. If we were working within `mutate()`, `casewhen()` would be the ideal choice for handling mutliple decisions. 
+
+
+**Let's try creating a loop that will take the square root of a positive number, but print a message if there is a negative message**
+
+```{r}
+num_list <- c(4,169,-9,9,-144,0)
+
+#Answer here
+```
+
+```{r, In-class Answer, echo = F, include = F}
+num_list <- c(4,169,-9,9,-144,0)
+
+for(x in num_list){
+  if(x >= 0) {
+    print(sqrt(x))
+  } else {
+    print("Cannot compute the square root of a negative number")
+  }
+}
+
+```
+
+## Reading in the Redfin Data
+
+Now that we understand what a for loop is and how to use if/else statements to enable our programs to make decisions for us, let's think about how we can use it for our analysis. First we need the names of all of the property and location files. We can use a nice R trick to create those names.
+
+```{r}
+ paste("test_0", c(1:8), sep = "")
+```
+
+```{r}
+property_files <- paste("Data/property_redfin_0", c(1:8), ".csv", sep = "")
+location_files <- paste("Data/location_redfin_0", c(1:8), ".csv", sep = "")
+
+files <- c(property_files, location_files)
+files
+```
+
+Now that we have our file names, our goal is to use a for loop to go through each file, decide if it is a property or location file and then read in the data and bind it with the previous data frame.
+
+To do that we need to know if our file is a property file or a location file. Luckily for us, the tidyverse has functions that can look at character strings and tell us if the string contains a certain word. 
+
+str_detect is a simple but powerful function. It takes a string (or a vector of strings), and a pattern and tells you TRUE if your string contains the pattern and FALSE if your string does not contain the pattern.
+
+```{r}
+str_detect("property_redfin_01.csv", "property") # TRUE
+str_detect("location_redfin_01.csv", "property") # FALSE
+
+str_detect(c("property_redfin_01.csv", "location_redfin_01.csv"),
+           "location") # c(FALSE, TRUE)
+
+```
+
+**Your turn, using our vector of files from above, along with str_detect, create a vector that only has our location files**
+<!-- files[str_detect(files, "location")] -->
+
+Now that we've learned how we can use str_detect to read strings, we are ready to put it all together and read in all of our data.
+
+**Let's create a loop that reads in all of the property and location data into two seperate data sets.**
+<!-- This for loop is honestly pretty complex, goal should be to get here at end of day 1 -->
+
+```{r, eval=F}
+property_data <- data.frame() # initialize empty data.frame
+location_data <- data.frame() # initialize empty data.frame
+
+# put your loop here
+```
+
+```{r, difficult In-class answer, message = F, echo=F}
+property_data <- data.frame() # initialize empty data.frame
+location_data <- data.frame() # initialize empty data.frame
+
+for(file in files){
+
+    if(str_detect(file, "property")){ # this is a property file, add to property_data
+        data <- read.csv(file)
+        property_data <- bind_rows(property_data, data)
+    } else if(str_detect(file, "location")){ # location file
+        data <- read.csv(file)
+        location_data <- bind_rows(location_data, data)
+    }
+}
+dim(location_data)
+dim(property_data) # same number of rows as property data
+```
+
+<!-- Homework should be mainly for loop and if statement focused. Does not need to involve too much data work, could have students complete a similar task as the lesson -->
+
+<!-- End day 1 -->
+
+# Day Two
+
+Last week we discussed for loops and conditional execution (if statements), as a means to reading in and combining our property and location data using bind_rows(). Today we will look at how we can combine our property and location data and then we will look at our data to make sure that it is free of errors and issues before we use it for our regressions.
+
+Our overarching question is how proximity to a metro station impacts the sale price of a house. 
+
+**What variables would we need to have in order to answer this question?**
+
+<!-- sale price/sq foot of house, distance of house to metro, number of bedrooms, number of bathrooms, size of total plot (small house on large plot could be much more expensive than small house on small plot) -->
+
+Take a look at the variables we have in our property and location data, we already have much of this data, or the ability to calculate these variables.
+
+```{r}
+names(property_data)
+names(location_data)
+```
+
+The good news is that we have much of the data we need, the bad news is that we have one file with location data (how close the house is to a metro station), while in the other file we have the sale price of the house. We need to combine these two data.frames.
+
+## "Joining" the data
+
+Combining data frames is called "joining." There are multiple types of joins as you can see in the dplyr cheat sheet:
+
+Help -> cheat sheets -> Data transformation with dplyr.
+
+Additionally, the below graphic shows all the different join types.
+
+```{r "dplyr joins image", echo = F}
+knitr::include_graphics("/msu/home/m1ssb03/Howard/Spring_2018/mod2/joins.png")
+```
+
+In order to join to data frames, they must have at least one column of the same variable. For us we want to figure out what that column name is, then we can tell our join function what column to join our data on.
+
+We can do this with a handy new operator, %in%, which tells us what elements of our object on the left are contained in the elements of our object on the right.
+
+```{r}
+3 %in% c(1, 2, 3, 4)
+3 %in% c(1, 2, 4)
+c(1, 2, 3, 4) %in% c(1, 7, 8, 9)
+
+vec1 <- c(1, 5, 8, 10)
+vec2 <- c(4, 5, 19, 10)
+vec1 %in% vec2
+
+which(vec1 %in% vec2) # position in vec1 with overlapping elements
+
+vec1[vec1 %in% vec2] # we can even get back those elements that overlap
+```
+
+
+```{r}
+property_names <- names(property_data)
+location_names <- names(location_data)
+
+property_names %in% location_names
+
+overlap <- property_names[property_names %in% location_names]
+overlap
+```
+
+Ok, we got it, our URL column exists in both of the tables! Since we need every single property to have location data for our analysis, we are only interested in properties where the join is successful, so we want a full join.
+
+```{r}
+joined_data <- full_join(property_data,
+                         location_data,
+                         by = overlap)
+
+names(joined_data)
+```
+
+Success!
+
+Note: It is also possible to perform a join where the columns we are matching in each table do not have the same name using the by argument: by = c("name1" = "name2").
+
+Similarly, it is also possible to join on multiple columns: by = c(column1, column2, etc...)
+
+We did it, we got our housing data all put together, phew! 
+
+Now that it is all together, it is time to take a look at it and see if we can spot any problems.
+
+```{r include = F, eval = F}
+View(joined_data)
+```
+
+**Take a look at the data with View(). What are some problems you see in terms of usability for this data?**
+
+<!-- lat_lon column, sold.date and list.date are in weird formats and are not dates,
+zip codes have extra zeros. state names are inconsistent, have va, VA, Virginia. Also have states we are not interested in that will need to be thrown out. (Michigan, Colorado). propertytype column has the word propertytype: in front of everything -->
+
+Clearly we have our work cut out for us!
+
+Let's first make a scatter-plot looking at our price vs square feet variables.
+
+```{r}
+joined_data %>% 
+    ggplot(aes(x = SQUARE.FEET, y = PRICE)) +
+    geom_point()
+```
+
+Hmm, something seems off with our PRICE variable, let's take a look at it.
+
+```{r}
+head(joined_data$PRICE)
+```
+
+Oh no, we have a USD in front of each price number, this means that instead of numeric data our prices are character data. We need a way to remove the USD.
+
+One way we could do this is by replacing the USD with nothing, "". This would have the same effect as removing it.
+
+```{r}
+str_replace("USD40000", "USD", "")
+```
+
+Luckily we can now use mutate to fix our whole column.
+
+```{r}
+joined_data <- joined_data %>% mutate(PRICE = str_replace(PRICE, "USD", ""))
+```
+
+**We just used str_replace to fix our PRICE column. Take a look at our PROPERTY.TYPE column. Using str_replace, fix this column as well.**
+
+```{r}
+# Answer Here
+```
+
+```{r "in-class exercise answer", echo = F, include = F}
+joined_data <- joined_data %>% mutate(PROPERTY.TYPE = str_replace(PROPERTY.TYPE,
+                                                                  "propertytype:",
+                                                                  ""))
+```
+
+Now that our price column is fixed we can make our plot again.
+
+```{r}
+joined_data %>% 
+    ggplot(aes(x = SQUARE.FEET, y = PRICE)) +
+    geom_point() +
+    labs(title = "Relationship between price and home size",
+         y = "USD",
+         x = "Sq ft",
+         caption = "Data from Redfin")
+```
+
+We still have the same problem, we forgot to convert our PRICE column to be numeric!
+
+```{r}
+joined_data <- joined_data %>% 
+    filter(!is.na(PRICE)) %>% 
+    mutate(PRICE = as.numeric(PRICE))
+
+# Now make the plot
+joined_data %>% 
+    ggplot(aes(x = SQUARE.FEET, y = PRICE)) +
+    geom_point() +
+    labs(title = "Relationship between price and home size",
+         y = "USD",
+         x = "Sq ft",
+         caption = "Data from Redfin")
+```
+
+Hmm, I don't like this y-axis, I want the labels to be formatted with dollar signs so that it is clear what is going on here. Luckily we can do this easily with the scales package.
+
+```{r, message = F}
+# install.packages("scales")
+library(scales)
+
+joined_data %>% 
+    ggplot(aes(x = SQUARE.FEET, y = PRICE)) +
+    geom_point() +
+    scale_y_continuous("USD", labels = dollar) + 
+    labs(title = "Relationship between price and home size",
+         x = "Sq ft",
+         caption = "Data from Redfin")
+```
+
+**How would you describe the relationship between price and size of a home?**
+
+So, we see that there is definitely a relationship between size of a home and price of a home. We would probably also expect to see a relationship between the property type and its price.
+
+```{r}
+type_price <- joined_data %>% 
+    group_by(PROPERTY.TYPE) %>% 
+    summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T))
+
+type_price
+```
+
+```{r}
+type_price %>% 
+            ggplot(aes(x = PROPERTY.TYPE, 
+                       y = price, 
+                       fill = PROPERTY.TYPE)) +
+            geom_bar(stat = "identity") +
+            scale_y_continuous("USD", labels = dollar) +
+            scale_fill_discrete(guide = F) + # get rid of the fill legend
+            theme_light() # Change the overall aesthetic
+```
+
+Our plot here clearly needs some work. We aren't planning on showing this to anyone, just looking at it for ourselves to see if we can come to some quick conclusions.
+
+**What changes did adding theme_light() make to the plot?**
+
+<!--
+Discussion of the idea of theme
+Data related aspects of visualization (scale functions control the dimensions of the plot related to the variables you are plotting) vs purely aesthetic decisions like background color)
+-->
+
+We've now seen that prices seem to show a relationship to square footage and that there is some variance is price per square foot by property type. 
+
+Another variable we should think about is the city and state of the house's location. Taxes in DC, Maryland, and Virginia are different, and these may have an impact on a home's sale price.
+
+Let's take a look at all of our different possibilities for the CITY_STATE variable.
+
+```{r}
+unique(joined_data$CITY_STATE)
+```
+
+It seems that our formatting is consistent in one regard, we have "city, state" but it is not consistent in how our states are given. We have va as well as VA, and somehow we got data for Michigan and Colorado in there!
+
+First we will need to break up this column into a city column and a state column, then we can look at states individually. Luckily we have a function which can help us, str_split_fixed.
+
+str_split_fixed takes a string (or vector of strings), and a pattern. The functions returns the pieces of the string after splitting on your pattern. Let me show you.
+
+```{r}
+strings <- str_split_fixed("United States of America", "of", n = 2)
+strings
+```
+
+We told R to split the string into 2 pieces (n = 2), so we got a matrix back with two columns, one for each of our new strings.
+
+We can subset this to get back our elements.
+
+```{r}
+strings[, 1] # first row, first column
+strings[, 2] # first row, second column
+```
+
+Let's test it out with something closer to our actual use case.
+
+```{r}
+str_split_fixed("Arlington, Virginia", ",", n = 2)
+```
+
+Great, let's use this with mutate now and create a city and a state column.
+
+```{r}
+joined_data <- joined_data %>% 
+    mutate(CITY = str_split_fixed(CITY_STATE, ",", n = 2)[,1],
+           STATE = str_split_fixed(CITY_STATE, ",", n = 2)[, 2])
+
+joined_data %>% select(CITY_STATE, CITY, STATE) %>% head
+```
+
+```{r}
+head(joined_data$STATE)
+```
+
+So we have successfully created a state column and a city column. We have one problem left, we now have a space in front of our state name. str_trim can be used to fix this problem.
+
+```{r}
+str_trim(" word ") # It removes the blank space!
+```
+
+```{r}
+joined_data <- joined_data %>% 
+    mutate(STATE = str_trim(STATE))
+
+head(joined_data$STATE)
+```
+
+**Just as our CITY_STATE column had to be split up, so too does our LAT_LON column which needs to be split into a LATITUDE and a LONGITUDE column. Right now our data is separated by a & character. Using the same method as above, split our LAT_LON column.**
+
+<!-- This one may take more encouragement/help -->
+
+```{r "lat_lon answer", echo = F, include = F, eval = T}
+joined_data <- joined_data %>% 
+    mutate(LATITUDE = str_split_fixed(LAT_LON, "&", n = 2)[,1],
+           LONGITUDE = str_split_fixed(LAT_LON, "&", n = 2)[,2])
+
+```
+
+Now that we've created our STATE column we still have some issues, we have "va" as well as "VA" and "Virginia."
+
+```{r}
+unique(joined_data$STATE)
+```
+
+
+The first thing we want to do is turn our lower case "va" to upper case VA. We can do that with the appropriately named str_to_upper function.
+
+```{r}
+str_to_upper("va")
+```
+
+```{r}
+joined_data <- joined_data %>% 
+    mutate(STATE = str_to_upper(STATE))
+
+unique(joined_data$STATE)
+```
+
+**Now we need to turn VIRGINIA into VA, using a function we've already seen today, make that change.**
+
+```{r "VIRGINIA ANSWER", echo = F, include = F}
+joined_data <- joined_data %>% 
+    mutate(STATE = str_replace(STATE, "VIRGINIA", "VA"))
+```
+
+We're almost done cleaning up our STATE data column. We just have to throw out rows from MICHIGAN and COLORADO since we are only interested in home sales that will fall along the DC metro. We can just use filter to keep the rows we want.
+
+```{r}
+joined_data <- joined_data %>% 
+    filter(STATE %in% c("VA", "DC", "MD"))
+
+unique(joined_data$STATE)
+```
+
+Now that our data is clean we can find out state average prices.
+
+```{r}
+state_average <- joined_data %>% group_by(STATE) %>% 
+    summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T))
+
+state_average_plot <- state_average %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    geom_bar(stat = "identity", width = 0.5) + 
+    labs(x = NULL, # What does this do?
+         y = "USD/Sq ft",
+         title = "Average price for DC Home sales",
+         caption = "Data from Redfin") 
+
+state_average_plot
+```
+
+I think that this would look better if my plot title were larger sized font and centered. Remember previously how we discussed plot elements as being divided into data related dimensions (controlled by the scale functions) and purely aesthetic options? We can change our aesthetic options using the theme() function. 
+
+```{r}
+state_average_plot +
+    theme(plot.title = element_text(size = 14, hjust = 0.5, color = "Red"))
+```
+
+Since our title is a character string, or text, we use element_text to control it. element_text allows us to set:  
+* font family (Times New Roman, Arial, etc...) 
+* font size (10, 12, 14, etc...)  
+* font face (bold, italic) 
+* color 
+* hjust (horizontal adjustment) 
+* vertical adjustment
+* angle  
+* other aspects that impact the display of text.
+
+**What are some other text elements that you see on our plot?**
+
+<!-- Caption, x and y axis titles, x and y axis labels, legend title, legend key labels -->
+
+Previously we saw that price per square foot differs by the property type, let's see if that holds true across states as well.
+
+```{r}
+state_proptype <- joined_data %>% 
+    group_by(PROPERTY.TYPE, STATE) %>% 
+    summarise(price = mean(PRICE/SQUARE.FEET, na.rm = T)) # empty lots
+
+state_proptype %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    geom_bar(stat = "identity") +
+    facet_wrap("PROPERTY.TYPE") +
+    labs(title = "Price by property type",
+         x = NULL,
+         y = "USD/Sq ft.",
+         caption = "Data from Redfin") +
+    theme(plot.title = element_text(face = "italic", size = 14, color = "Blue"),
+          axis.text.x = element_text(face = "bold", color = "green4"),
+          plot.background = element_rect(fill = "beige", color = "red"),
+          panel.background = element_rect(fill = "cadetblue1", 
+                                          color = "black", linetype = 3))
+              
+              
+```
+
+Just as we could use element_text to control the text elements of our plot, so too can we use element_rect to control the rectangular elements of our plot. The main rectangle of our plot is the background which we changed to "beige" with a "red" border. Additionally, we can change the background color for the area where the data is displayed by use of panel.background.
+
+**What did the linetype argument in panel.background do? What other rectangles do you see that we could adjust?**
+
+<!-- linetype changed the panel borders to be dashed. the legend background is another rectangle as is the background box for the facet titles, which is controlled via strip.background -->
+
+Perhaps looking at the price of the home per square foot of the home is not the best way to do it. Many of the sales include additional land on which the house is situated.
+
+Let's take a look at making a plot of price/lot size
+
+```{r}
+joined_data %>% select(PRICE, SQUARE.FEET, LOT.SIZE) %>% head()
+```
+
+So we seem to have a lot of NA values, these are probably condo units that are in a building so not on a lot. Let's update our data so that if the lot size is NA, we get the square feet of the unit itself.
+
+```{r}
+joined_data <- joined_data %>% 
+    mutate(LOT.SIZE = ifelse(is.na(LOT.SIZE), SQUARE.FEET, LOT.SIZE))
+
+# Now we can find our average
+lot_state_data <- joined_data %>% 
+    group_by(PROPERTY.TYPE, STATE) %>% 
+    summarize(price = mean(PRICE/LOT.SIZE, na.rm = T))
+
+head(lot_state_data)
+```
+
+
+**Now that our data is prepared make a plot like the one above looking at the average price per square foot by each state and property type.**
+
+* **Make your title centered and Green**
+* **Make your panel background White with a red border**
+
+```{r "Lot size plot answer", echo = F, include = F}
+lot_state_data %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    facet_wrap("PROPERTY.TYPE") +
+    geom_bar(stat = "identity", width = 0.5) +
+    labs(x = NULL,
+         title = "Price per square foot of total property size",
+         caption = "Data from Redfin",
+         y = "USD/Sq ft.") +
+    theme(plot.title = element_text(hjust = 0.5, color = "green"),
+          panel.background = element_rect(fill = "white", color = "red"))
+```
+
+<!-- Have a student post their answer to etherpad and run the code, then discuss the output and ways to improve/change if necessary -->
+
+<!-- END DAY 2 -->
+
+# Day Three
+
+<!-- Clean up zip codes, first regressions, write custom functions -->
+
+Last week we successfully joined all of our data into a single data frame and cleaned up many of our columns using string cleaning functions like str_split_fixed and str_replace. We have one last column to clean before our data will be ready for our next step.
+
+Remember, our goal is to find the impact of the distance of a house from a metro station on the price of the house.
+
+## Cleaning zip code data
+
+```{r}
+head(joined_data$ZIP_CODE)
+```
+
+Someone added a bunch of zeroes to our zip code data and put a quote mark in the beginning. We need to pull out the valid zip codes from these numbers. We can do this by combining two new str functions, str_sub and str_length.
+
+str_sub takes a text string, a start position and an end position and returns the part of the text string between the start and end.
+
+```{r}
+str_sub("Hello", start = 2, end = 4)
+```
+
+It works on vector as well like all of our other string functions.
+
+The other function we need, str_length, tells you how many characters there are in a string.
+
+```{r}
+str_length("Hello")
+```
+
+```{r}
+str_length("'222040000")
+
+str_sub("'222040000", 2, str_length("'222040000") - 4)
+```
+
+Now we can use mutate to fix our zip code data.
+
+```{r}
+joined_data <- joined_data %>% 
+    mutate(ZIP_CODE = str_sub(ZIP_CODE, 2,
+                                         str_length(ZIP_CODE) - 4))
+
+head(joined_data$ZIP_CODE)
+```
+
+Let's see how housing prices vary by zip code, this will give us a clue about what effects the neighborhood in which the house is located are.
+
+```{r}
+zip_data <- joined_data %>% 
+    group_by(ZIP_CODE) %>% 
+    summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T))
+
+range(zip_data$price, na.rm = T)
+```
+
+So we see pretty big differences in price per square foot between zip codes, exactly as we would expect. We will have to take this into account in our later regressions.
+
+Now that we have successfully cleaned up our housing data, it is time to take a look at our metro station data which we will use to calculate the distance of each property to the nearest metro station. Our metro station location data is stored in an xlsx file, so we will not be able to use read_csv to get the data.
+
+```{r, message = F}
+#install.packages("xlsx")
+library(xlsx)
+
+metro_data <- read.xlsx("Data/Metro_lat_lon.xlsx", sheetIndex = 1)
+
+names(metro_data)
+```
+
+```{r, include = F, eval = F}
+View(metro_data)
+```
+
+Now we have a latitude and longitude for each metro station and a latitude and longitude for each property. We can use them to calculate the distance. Unfortunately this is actually a pretty difficult calculation and we are going to have to write our own function to solve this problem.
+
+Before we can do that though we will have to discuss how to do this.
+
+## Review: What is a function
+
+For us, a function is a piece of code that takes one or more inputs and returns one or more outputs. For example, the min() function takes a vector of numbers and returns the number with the lowest value.
+
+Let's talk about how to write one.
+
+In R a function is defined as follows:
+
+function_name <- function(*arguments*) {  
+    *Code that does your task*  
+}
+
+Here is a very simple function for adding two numbers together.
+
+```{r}
+add <- function(number1, number2){
+    number1 + number2
+}
+
+add(2, 5)
+```
+
+**Write a new function, "subtract" which takes two numbers as arguments and returns the first number minus the second number.**
+
+```{r, echo = F, include = F}
+subtract <- function(number1, number2){
+    number1 - number2
+}
+
+subtract(2, 5)
+```
+
+We can do something similar with exponents.
+
+```{r}
+exponent <- function(base, power){
+    base**power
+}
+
+exponent(base = 2, power = 8)
+```
+
+We are able to use any code that we want inside a function. For example, we can use for loops. Let's write a function that takes a vector of numbers and returns the sum of that vector.
+
+```{r}
+vector_sum <- function(numeric_vector){
+    
+    sum <- 0
+    for(number in numeric_vector){
+        # Use for loop to add up every number in the vector
+        sum <- sum + number
+    }
+    return(sum)
+}
+
+vector_sum(1:5)
+```
+
+Be careful not to use names of functions that have already been defined elsewhere in R. For example, `sum()` is already a function in base R. If we were to name our function sum as well, our new function would replace the old sum functino. 
+
+Notice that the last line of my function uses the `return()`. This function is special, it says: "I want the output of my function to be this value." If we don't use `return()`, by default our output will be the last object created within the function code. If we don't specify the output of our function explicitly, it may make it more difficult for another person to read our code. More importantly, we may forget what we were outputing and could return the wrong value or object! It is good practice to be explicit whenever possible to avoid confusion and errors, especially since RStudio will not be able to help you find errors where our functions output the wrong things.
+
+Just like we can use for loops, we can also use if/else statements. Let's look at a way to write a function that finds the minimum value in a vector.
+
+```{r}
+vector_min <- function(numeric_vector){
+    
+    m <- numeric_vector[1] # initialize our minimum to the first element
+    
+    for(number in 2:length(numeric_vector)){ 
+        # Now go through the rest of the vector
+        if(numeric_vector[number] < m){
+            # If our vector elements is less than min, update our minimum value
+            m <- numeric_vector[number]
+        }
+    }
+    # Once we finish going through our vector, output the minimum
+    return(m)
+}
+
+
+test_vector <- c(1, 4, 6, -8, 0, 11)
+
+vector_min(test_vector)
+```
+
+**Write a function called vector_max which takes a numeric vector and returns the maximum element in it. Test out your function on our test_vector.**
+
+```{r "vector_max answer", echo = F, include = F}
+vector_max <- function(numeric_vector){
+    
+    m <- numeric_vector[1] # initialize our minimum to the first element
+    
+    for(i in 2:length(numeric_vector)){ 
+        # Now go through the rest of the vector
+        if(numeric_vector[i] > m){
+            m <- numeric_vector[i]
+        }
+    }
+    return(m)
+}
+
+
+test_vector <- c(1, 4, 6, -8, 0, 11)
+
+vector_max(test_vector)
+```
+
+As you've seen, functions are very useful when you have code you want to use to do something many times. Instead of having to write out our for loop to find the max of a set of numbers each time, we can simply use our function.
+
+Let's try this out with a more fun example, rock paper scissors.
+
+First we want to write out our code without putting it into a function. Once we are sure that it works, we can write it as a function.
+
+```{r}
+player1 <- "rock"
+player2 <- "paper"
+
+if((player1 == "rock" & player2 == "paper") |
+   (player1 == "paper" & player2 == "rock") |
+   (player1 == "scissors" & player2 == "paper")){
+        print("Player 1 Wins!")
+} else if (player1 == player2){
+    print("Tie game!")
+} else {
+    print("Player 2 Wins!")
+}
+```
+
+Great, so we now have the "body" of our function. 
+
+**Based on the above code, create a function: RPS, which takes two arguments - player1 and player2 - and returns who wins the game of rock paper scissors.**
+
+```{r "RPS Answers", echo = F, include = F}
+RPS <- function(player1, player2) {
+    if ((player1 == "rock" & player2 == "paper") |
+        (player1 == "paper" & player2 == "rock") |
+        (player1 == "scissors" & player2 == "paper")) {
+    print("Player 1 Wins!")
+    } else if (player1 == player2) {
+    print("Tie game!")
+    } else {
+    print("Player 2 Wins!")
+    }
+}
+```
+
+<!-- Homework should expand on RPS function -->
+
+Going back to our housing and metro data. Our goal is to calculate how far each property is from the nearest metro station using latitude and longitude data.
+
+Before we try and tackle this problem for all properties, let's first try and find the distance from one house to one metro station.
+
+```{r}
+test_property <- joined_data[1, ]
+test_metro <- metro_data[1, ]
+```
+
+Now we have one house and one metro station with a latitude and longitude for the house and a latitude and longitude value for the metro station. We can try using some trigonometry to find the distance. The distance between two points is the hypotenuse given by a triangle made from the change in the x direction and a change in the y direction. What this means is that if we find the difference in longitude values and the difference in latitude values, we can use them to find how far apart metro station and our property are.
+
+```{r}
+delta_x <- test_property$LONGITUDE - test_metro$Longitude
+delta_y <- test_property$LATITUDE - test_metro$Latitude
+
+delta_x
+delta_y
+```
+
+Darn, we hit an error. Let's check the class of our values.
+
+```{r}
+class(test_property$LONGITUDE)
+
+# As we fear, character but we need numeric
+test_property <- test_property %>% 
+    mutate(LONGITUDE = as.numeric(LONGITUDE),
+           LATITUDE = as.numeric(LATITUDE))
+
+# Now let's try again
+delta_x <- test_property$LONGITUDE - test_metro$Longitude
+delta_y <- test_property$LATITUDE - test_metro$Latitude
+
+delta_x
+delta_y
+```
+
+Now that we have our distances we can use the Pythagorean formula to calculate the distance.
+
+```{r}
+distance <- sqrt(delta_x**2 + delta_y**2)
+distance
+# One degree is equal to about 69 miles
+distance/69
+```
+
+**Write a function that takes 4 arguments: property long and lat values, and metro long and lat values. The function should then calculate the pythagorean distance between the property and the metro.**
+
+<!-- Insert answer -->
+
+
+Hmm, something is wrong. Our test property is in Arlington and our test metro is in Maryland east of DC, a distance of about ten miles. What happened?
+
+The earth is not flat! We can't use a simple Pythagorean formula to calculate the distance between our two points. Luckily someone has solved this issue for us in the geosphere library.
+
+```{r}
+# install.packages("geosphere")
+library(geosphere)
+
+prop_long_lat <- c(test_property$LONGITUDE, test_property$LATITUDE)
+metro_long_lat <- c(test_metro$Longitude, test_metro$Latitude)
+
+distance <- distHaversine(prop_long_lat, metro_long_lat)
+# By default the output distance is in meters
+# There are 1609.344 meters in a mile
+distance/1609.344
+```
+
+This is much more realistic!
+
+Now that we calculated our distance from one property to one metro, let's find a way to calculate the distance from one property to every metro using for loops.
+
+```{r}
+output_distances <- c()
+
+for(metro in 1:nrow(metro_data)){
+    # Pull out our longitude and latitude values for the metro station
+    metro_long_lat <- c(metro_data$Longitude[metro],
+                        metro_data$Latitude[metro])
+    # Calculate the distance to our property
+    distance <- distHaversine(p1 = prop_long_lat, # from above
+                              p2 = metro_long_lat)
+    # append that distance to our distances vector
+    output_distances <- c(output_distances, distance)
+}
+output_distances
+```
+
+**Turn the above code into a function called prop_metros_dist that does the following:**
+
+* **Finds the distance from a property to every metro station**
+* **Converts the distance from meters to miles**
+* **Returns the distance (in miles) of the closest metro station**
+
+<!-- Make sure you give students this answer once they try to answer the question so that later everyone will get the same results -->
+
+```{r "prop_metro_answer", echo = F}
+prop_metros_dist <- function(prop_long_lat, metro_data){
+    output_distances <- c()
+
+    for(metro in 1:nrow(metro_data)){
+        # Pull out our longitude and latitude values for the metro station
+        metro_long_lat <- c(metro_data$Longitude[metro],
+                            metro_data$Latitude[metro])
+        # Calculate the distance to our property
+        distance <- distHaversine(p1 = prop_long_lat,
+                                  p2 = metro_long_lat)
+        # append that distance to our distances vector
+        output_distances <- c(output_distances, distance)
+    }
+    min(output_distances)/1609.344
+}
+
+prop_metros_dist(prop_long_lat, metro_data)
+```
+
+We are so close, now we just need to figure out how to apply this function for every property in our data-set. We have one main problem, our distance function expects us to give longitude and latitude as a two number vector, but we have a LATITUDE column and a LONGITUDE column in our joined_data. What we need is a "wrapper function."
+
+A wrapper function is really just a function that calls another function. For example, the function that we just wrote is a "wrapper function" around distHaversine. What we need to do is write a function that can take our LATITUDE and LONGITUDE columns, turn them into a vector of two numbers, and then pass them along to our prop_metros_dist function which can give us the distance of the closest metro to that property.
+
+<!-- Could end day here -->
+
+## Function Saftey
+
+While functions are another convinient way to help us improve the readibility and replicibility of our code, user errors can throw a wrench in our program. Look at the above wrapper function. We need to have the geosphere package installed in order to utilize `prop_metros_dist()`. Unless you read the code `prop_metros_dist()` and *also* recognize that `distHaversine()` is a function from geosphere, then a user may not install and load the package. It is our job as programmers to ensure that our functions can address these concerns.
+
+## require() and warning()
+
+We will utilized two functions that can assist us in function saftey: `require()` and `warning()`. The first function works similarly to `library()` and attempts to load and attach a package, however `require()` was designed specifically to be used *inside* other functions. When a package fails to load, `require()` returns `FALSE` and gives us a warning message rather than an error. This allows us to use `require()` with if/else statments to load packages and control whether the rest of the function is run or not. When we combine this with `warning()`, a funtion that prints warning messages, we are able to more accurately describe why our functions are not working so users can make the appropratie changes.
+
+
+```{r}
+distance_function <- function(LONG, LAT, metro_df){
+    if(!require(geosphere)){ # what does require do?
+      warning("geosphere package is not installed")
+    } else{
+      # We need to turn our LONG and LAT columns into a vector
+      prop_long_lat <- c(LONG, LAT)
+      # Now call our prop_metros_dist function from above
+      out <- prop_metros_dist(prop_long_lat,
+                            metro_df)
+      return(out)
+    }
+}
+```
+
+```{r, eval = F}
+#test that it does not give us an error
+distance_function(joined_data$LONGITUDE[3],
+                  joined_data$LATITUDE[3],
+                  metro_data) 
+```
+
+
+## Improving our function
+
+You may have noticed that we have still recieved an error. This one talks about a inputing a non-numeric argument. Let's make sure that our input data were the correct classes.
+
+```{r}
+class(joined_data$LONGITUDE[3])
+class(joined_data$LATITUDE[3])
+```
+
+Ah, there is the problem! We need to update our data.
+
+```{r}
+joined_data <- joined_data %>% 
+    mutate(LATITUDE = as.numeric(LATITUDE),
+           LONGITUDE = as.numeric(LONGITUDE))
+
+#test that it does not give us an error
+distance_function(joined_data$LONGITUDE[3],
+                  joined_data$LATITUDE[3],
+                  metro_data) 
+```
+
+It works! Now we can apply it over our entire data frame.
+
+**How could we improve this function in order to ensure function saftey?**
+<!-- Include control sturctures that test whether the inputs are of the proper class. Have the students discuss the code and post it to Etherpad --> 
+
+<!-- Couldn't get this to work within mutate, not terrible if we leave the 
+for loop since it is a good reinforcement of the for loop concept anyway -->
+
+```{r}
+joined_data$metro_distance <- NA #initialize the column
+
+for(i in 1:nrow(joined_data)){
+    joined_data$metro_distance[i] <- distance_function(joined_data$LONGITUDE[i],
+                                                 joined_data$LATITUDE[i],
+                                                 metro_data)
+}
+head(joined_data$metro_distance)
+```
+
+Now that we have a column showing how far each property is from the metro, we can make a plot showing price as it varies for metro distance. Note that we will want to round our distance value so that we can get more properties in each distance bucket.
+
+```{r}
+joined_data %>% 
+    mutate(distance_tenth = round_any(metro_distance, 0.1))
+
+joined_data %>% group_by(distance_tenth) %>% 
+    summarize(price = mean(PRICE/SQUARE.FEET, na.rm = T)) %>% 
+    ggplot(aes(x = distance_tenth, y = price)) +
+    geom_line() +
+    labs(title = "Price vs distance from metro station",
+         y = "USD/Sq ft.",
+         x = "Miles",
+         caption = "Data from Redfin and WMATA")
+```
+
+**What if any relationship does this seem to show between the distance of a property to a metro station and the price per square foot of the property?**
+
+<!-- End of Day 3 -->
+
+# Day Four
+
+## Effect of metro distance on home prices
+
+Previously in this module we read in our raw property data from Redfin, cleaned it, and then used our metro station location data to understand how close the nearest metro station is to each of our properties. Now we can try running some regressions to look at the impact that metro distance might have on our prices.
+
+```{r}
+joined_data %>% 
+    filter(!is.na(SQUARE.FEET)) %>% 
+    ggplot(aes(x = metro_distance,
+               y = PRICE/SQUARE.FEET)) +
+    geom_point() +
+    labs(title = "Price per Square foot as a function of distance from metro",
+         x = "Miles",
+         y = "USD/Sq ft.",
+         caption = "Data from Redfin and WMATA")
+```
+
+Wow, we really don't see all that much of a relationship here. Let's try using a regression model.
+
+```{r}
+price_distance <- lm(PRICE/SQUARE.FEET ~ metro_distance, data = joined_data)
+```
+
+And now we can use stargazer to look at the impact of metro distance on price.
+
+```{r}
+library(stargazer)
+
+stargazer(price_distance, header = F,
+          title = "Impact of Distance From Metro on Price",
+          type = "text")
+```
+
+So it seems that metro distance does have a negative effect on the sales price of the house. Perhaps there are other unobservable factors that may affect home price. Let's add in another variable we looked at earlier in our analysis, state.
+
+**Can you think of any STATE SPECIFIC factors that may affect home price?**
+<!-- Perhaps the density of housing and proximity to jobs and other amenities further increases the price of homes in DC, or state and local taxes are cheaper in Virginia so housing prices are cheaper-->
+
+
+```{r}
+state_dist <- lm(PRICE/SQUARE.FEET ~ metro_distance + STATE, 
+                 data = joined_data)
+
+stargazer(price_distance, state_dist, type = "text",
+          header = F)
+```
+
+**What STATE is missing from the results, how should we interpret these coefficients? What happened to the coefficient for metro distance when we added our STATE variable? What about the explanatory power of the model, did that improve?**
+
+However, home prices are affected by more than just the location. The amount of time a home spends on the market is another componenet that could affect home prices. Ideally, a homeowner would sell there house quickly at the price they desire but sometimes the prices are too high or there is little demand to move in the area. As the homeowner keeps their house on the market longer and longer, they may be willing to lower the price in order to sell the home and purchase a new one.
+
+We are not provided with this data, but luckily have the date the house was listed and the date it finally sold! In order to calculate the amount of days a home has spent on the market, we first need to work with dates.
+
+```{r}
+joined_data %>% select(LIST.DATE, SOLD.DATE) %>% head()
+```
+
+```{r, message = F}
+date1 <- as.Date("July-15-2017", format = "%B-%d-%Y")
+
+date2 <- as.Date("Tuesday- Sep 26, 2017", format = "%A- %b %d, %Y")
+```
+
+We now have our dates not as character strings but as date objects in R. Dates in R are just numbers which are displayed in a special format. Because they are numbers we can do mathematical operations with them.
+
+```{r}
+date2-date1
+```
+
+Additionally, we can generate date sequences.
+
+```{r}
+seq(date1, date2, by = "day")
+```
+
+We can increment our sequence by different time units:
+
+```{r}
+seq(date1, date2, by = "week")
+seq(date1, date2, by = "2 weeks")
+seq(date1, date2, by = "month")
+```
+
+**Knowing that we can use dates for math, how would you generate a sequence of dates showing the first day of the month for the year 2017? How about the last day of each month for 2017?**
+
+```{r "date seq answer", echo = FALSE}
+first_day <- seq(as.Date("2017-01-01"), as.Date("2017-12-01"), by = "month")
+last_day <- seq(as.Date("2017-02-01"), as.Date("2018-01-01"), by = "month") - 1
+```
+
+
+For our analysis we want to see how the length of time on the market impacts the final sales price of the home. To do this we will need to convert our current character date columns in R date values before manipulating those values.
+
+```{r}
+joined_data <- joined_data %>% 
+    mutate(SOLD.DATE = as.Date(SOLD.DATE, format = "%B-%d-%Y"),
+           LIST.DATE = as.Date(LIST.DATE, format = "%A- %b %d, %Y"),
+           days_on_market = as.numeric(SOLD.DATE - LIST.DATE))
+```
+
+**Using our new days_on_market value, create a new variable, "weeks_on_market" which should be exclusively integer values (3 days would be 0 weeks and 4 days would be 1 week).**
+
+```{r "weeks_on_market answer", echo = F, include = F}
+joined_data <- joined_data %>% 
+    mutate(weeks_on_market = round(days_on_market/7))
+```
+
+Now we can add our time on the market to our regressions.
+
+```{r}
+days_regression <- lm(PRICE/SQUARE.FEET ~ metro_distance + days_on_market,
+                      data = joined_data)
+
+stargazer(days_regression, type = "text")
+```
+
+Although our adjusted $R^2$ has improved, the number of days on the market appears to have no affect on the price of a home. Bummer, but let's not get discouraged! Perhaps the effect of distance on price is non-linear, or varies from state to state. A popular way to introduce non-linearites to our regression models is through interaction terms. To create an interaction term, we multiply our variables two variables, such as `metro_distance` and `STATE` to create a new variable that is added to our regression model. Thankfully, interaction terms are very easy to implement:
+```{r}
+inter_reg <- lm(PRICE/SQUARE.FEET ~ metro_distance + STATE + STATE*metro_distance,
+                         data = joined_data)
+```
+
+
+**Create te a stargazer table to display the results of our new model. Are these results statistically significant?**
+
+```{r, echo = F}
+stargazer(inter_reg, header = F,type="text")
+```
+Dummy variables change the intercept of our model, while interaction terms change the slope of our model. To better illustrate this point, look at our chart of the fitted values for the `inter_reg` model:
+
+```{r, echo = F}
+inter_data <- augment(inter_regression)
+
+ggplot(exreg_data)+
+  geom_line(aes(x=metro_distance,y=.fitted,color=STATE)) +
+  labs(title = "The Effect of Distance Across States",
+       x = "Distance (miles)",
+       y = "Price/Sq Ft",
+       color = "State") +
+  theme_minimal()
+```
+
+Notice how the slopes and intercepts differ for each state. That means the marginal effect that distance from a metro has on home prices is different for the three states in our sample. First consider the model we have for our regression:
+
+$$ \text{Price/Sq Ft} = \beta_0 + \beta_1 \text{distance} + \beta_2\text{MD}+ \beta_3\text{VA} ++ \beta_4\text{MD}\times\text{distance} + \beta_5\text{VA}\times\text{distance} $$
+
+Plugging in for the values of our dummy variables we can solve for 3 seperate equations:
+
+1. DC: $\text{Price/Sq Ft} = \beta_0 + \beta_1 \text{distance}$
+2. MD: $\text{Price/Sq Ft} = (\beta_0 + \beta_2) + (\beta_1+\beta_3) \text{distance}$
+3. VA: $\text{Price/Sq Ft} = (\beta_0 + \beta_3) + (\beta_1+\beta_4) \text{distance}$
+
+** Do homes in Maryland tend to be more or less expensive than homes in Virginia as they move further away from the metro?**
+
+What if we believe that after a certain distance, the affect of distance from the nearest metro station has a different effect home prices. For example, we could imagine that the price difference between a homes that are 3.75 and 4 miles away is much different than the differences between homes that are 0.5 and 0.25 miles.
+
+For nonlinear transformations (such as quadratic, cubic, or log terms), it is simpler to manually create the variables and then run the regressions. 
+
+```{r}
+joined_data <- joined_data %>%
+  mutate(distance_sq = metro_distance^2)
+square_reg <- lm(PRICE/SQUARE.FEET ~ metro_distance + distance_sq,
+                 data = joined_data)
+```
+
+```{r, echo = F, results='asis'}
+stargazer(square_reg, header = F)
+```
+
+
+We can see that as you move further away from the metro, distance from the metro has less effect on the price of a home. However, our coefficients are still are in terms that are hard to conceptualize. What does a $50 price per square foot increase really mean anyway? Recall that our data was non-linear and contained a handful of outliers. Luckily, we have a transformation that will address both of our problems --- natural log!
+
+```{r, echo = F}
+ggplot(joined_data) +
+  geom_point(aes(y=PRICE, x=metro_distance)) +
+  labs(title = "The Effect of Distance on Price",
+       x = "Distance (miles",
+       y = "Price") +
+  scale_y_continuous(labels = dollar)
+
+```
+
+```{r, echo=F}
+joined_data <- joined_data %>%
+  mutate(lPRICE = log(PRICE))
+
+  ggplot(joined_data) +
+  geom_point(aes(y=lPRICE, x=metro_distance)) +
+  labs(title = "The Effect of Distance on Price",
+       x = "Distance (miles",
+       y = "Price")
+```
+
+The effects of price are much easier to predict and we only have a single outlier! Let's keep it for now. 
+
+**Create a regression model that includes `metro_distance`, `STATE`, and `lPRICE` but no interactions. Put these results in a stargazer table, what are the units for the coeffcients in the model?**
+
+                 
+```{r, echo = F, results='asis'}
+ln_reg <- lm(lPRICE ~ metro_distance + STATE,
+                 data = joined_data)
+stargazer(ln_reg, header = F)
+```
+
+
+There is a glaring problem when trying to interpret our results --- what exactly are log dollars? The good news is that the coefficients of variables that have been logged are interpreted differently than standard variables! Listed below is a table that helps us with the interpretation of various combinations of logged variables.
+
+
+\begin{center}
+ \begin{tabular}{||c | c c c||} 
+ \hline
+ Model & Dependent Variable & Independent Variable & Interpretaion of $\beta_{1}$ \\ [0.5ex]
+ \hline\hline
+ Level-level & y & x & $\Delta y = \beta_{1} \Delta x$ \\ 
+ \hline
+ Level-log & y & log(x) & $\Delta y = (\beta_{1}/100)\% \Delta x$ \\ 
+ \hline
+ Log-level & log(y) & x & $\%\Delta y = (100\beta_{1}) \Delta x$ \\ 
+ \hline
+ Log-log & log(y) & log(x) & $\%\Delta y = (\beta_{1}/100)\% \Delta x$ \\
+ \hline
+\end{tabular}
+\end{center}
+
+Applying this to our regression results, we interpret all of our coeffiecients as log-level. Therefore we can conclude that a home being an additional mile away from the metro is associated with 11.1% decrease in the sales price of a home. That's a lot! These types of models can give us an idea of the magnitude of the effect much more clearly than standard level-level models, but our constant is no longer interpretable. That is not to say that you should log variables that are linear. Only use the natural log when you are trying to fix non-linear data.
+
+** Interpert the rest of the coefficients in the model. Which state is associated with the lowest home prices? **
+
+** Now it's your turn to create a non-linear model! Include a graph explaining why you chose certain variables and a regression table displaying your results. I must include either an interaction, quadratic, or log-term. Interpret the results of your model, did you find these surprising? **

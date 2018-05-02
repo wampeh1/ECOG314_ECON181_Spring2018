@@ -1,0 +1,528 @@
+---
+title: "Module 3 Day 1"
+output: pdf_document
+---
+
+# Day 1: Differences-in-Differences
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size = "tiny", width = 50, fig.height = 3.5,
+                      fig.width = 5)
+
+library(tidyverse)
+library(ggthemes)
+library(data.table)
+library(stargazer)
+
+# Set your working directory to be the mod3 folder
+# setwd()
+```
+
+## Goals for Today
+
+* Card and Krueger
+    * Regression analysis
+    * OLS and Fixed Effects
+    * Differences-in-Differences
+* Review of:
+    * Cleaning data
+    * Using `lm()`
+    * Presenting results with `stargazer()`
+
+## The 1994 Card and Krueger Study
+
+  * A 1992, $0.80 minimum wage increase by New Jersey prompted researchers to revisit the debate on the effect of the minimum wage on labor markets.
+  * Card and Krueger collected information from fast-food restaurants in New Jersey and eastern Pennsylvania.
+  * They found no indication of a reduction in employment.
+  * An even bigger impact of the study was the introduction of differences-in-differences.
+    * Intuitive tool suitable for quasi-experimental studies
+  * We downloaded the data from [_David Card's personal website_](http://davidcard.berkeley.edu/data_sets.html). 
+
+## The 1994 Card and Krueger Study
+
+  * New Jersey and Pennsylvania are similar enough states geographically that they lend themselves to comparison.
+      + We can control for state-level differences using fixed effects.
+      + The differences between NJ and PA present a natural expriment with a "control" group (no wage increase in PA) and a "treatment" group (NJ).
+      + Differences-in-differences will allow us to understand the effect of policy like a minimum wage increase because it provides insight into differences between the control and treament in more than one time period.
+
+## Reading in the Data: .dat files
+
+Let's start by reading in the Card and Kreuger data and doing some basic analysis in the same way that we have been since the beginning of class. We want to get an idea of what the data looks like before we perform any sort of regressions.
+
+* Find the data file with the name 'public'
+* This is saved as a .dat file: a generic data file format that can be read into R using the `fread()` function from the `data.table` package 
+* Once you've read in the data, take a look at the variable names and types 
+
+```{r, results='hide', message=FALSE, echo=FALSE}
+# read in the employment data
+cardKrueger <- fread("Data/public.dat")
+
+# look at how reading in data went
+glimpse(cardKrueger)
+```
+
+## Reading in the Data: .dat files
+
+* What are some issues you might foresee with these variables?
+
+* *Why did many of our variables get read in as factors?*
+
+* Try reading in the data again, using the code below
+    to avoid turning variables into factors that should not be
+
+```{r}
+cardKrueger <- #Read in data without turning numeric data into character vectors
+```
+
+## Card and Krueger Data Codebook
+
+Let's look at the codebook to rename and recode our variables.
+
+* **ID variables:** SHEET, CHAIN, CO_OWNED, STATE
+
+* **Location variables:** SOUTHJ, CENTRALJ, NORTHJ, PA1, PA2, SHORE
+
+* **First interview variables:** NCALLS, EMPFT, EMPPT, NMGRS, WAGE_ST, INCTIME, FIRSTINC, BONUS, PCTAFF, MEALS, OPEN, HRSOPEN, PSODA, PFRY, PENTREE, NREGS, NREGS11
+
+* **Second interview variables:** TYPE2, STATUS2, DATE2, NCALLS2, EMPFT2, EMPPT2, NMGRS2, WAGE_ST2, INCTIME2, FIRSTIN2, SPECIAL2, MEALS2, OPEN2R, HRSOPEN2, PSODA2, PFRY2, PENTREE2, NREGS2, NREGS112
+
+```{r, include = FALSE}
+names(cardKrueger) <- c("SHEET", "CHAIN", "CO_OWNED", "STATE", "SOUTHJ", 
+                        "CENTRALJ", "NORTHJ", "PA1", "PA2", "SHORE", "NCALLS", 
+                        "EMPFT", "EMPPT", "NMGRS", "WAGE_ST", "INCTIME", 
+                        "FIRSTINC", "BONUS", "PCTAFF", "MEALS", "OPEN", 
+                        "HRSOPEN", "PSODA", "PFRY", "PENTREE", "NREGS", 
+                        "NREGS11", "TYPE2", "STATUS2", "DATE2","NCALLS2", 
+                        "EMPFT2", "EMPPT2", "NMGRS2", "WAGE_ST2", "INCTIME2",
+                        "FIRSTIN2", "SPECIAL2", "MEALS2", "OPEN2R", "HRSOPEN2", 
+                        "PSODA2","PFRY2", "PENTREE2", "NREGS2", "NREGS112")
+
+```
+
+## In-Class Exercise
+
+* Use the information from the codebook to create:
+
+    + A categorical **chainName** variable:
+        * "Burger King"
+        * "KFC"
+        * "Roys"
+        * "Wendys"
+    + A categorical **stateAbbrv** variable:
+        * "NJ"
+        * "PA"
+    + A categorical **location** variable:
+        * "Southern NJ"
+        * "Central NJ"
+        * "Northern NJ"
+        * "Northeast suburbs of Philadelphia"
+        * "Easton"
+        * "NJ Shore"
+
+```{r, include = FALSE}
+# create a clean dataset using information from the code book
+cardKrueger_clean <- cardKrueger %>% 
+  mutate(chainName = case_when(CHAIN == 1 ~ "Burger King",
+                               CHAIN == 2 ~ "KFC",
+                               CHAIN == 3 ~ "Roys",
+                               CHAIN == 4 ~ "Wendys"), 
+         stateAbbrv = ifelse(STATE == 1, "NJ", "PA"),
+         location = case_when(SOUTHJ == 1 ~ "Southern NJ",
+                              CENTRALJ == 1 ~ "Central NJ",
+                              NORTHJ == 1 ~ "Northern NJ",
+                              PA1 == 1 ~ "Northeast suburbs of Philadelphia",
+                              PA2 == 1 ~ "Easton",
+                              SHORE == 1 ~ "NJ Shore")) %>%
+  # subset to useful variables
+  select(stateAbbrv, chainName, location, EMPFT, EMPPT, NMGRS, WAGE_ST, HRSOPEN, 
+         PSODA, PFRY, PENTREE, EMPFT2, EMPPT2, NMGRS2, WAGE_ST2, HRSOPEN2, 
+         PSODA2, PFRY2, PENTREE2)
+
+# check variable classes
+glimpse(cardKrueger_clean)
+
+# Tidy up workspace
+rm(cardKrueger)
+```
+
+
+## Understanding the Movement in Wages
+
+Now that we've cleaned our data, we can go back to our original questions about the dataset. We want to know *how minimum wage affects employment,* so let's start by looking at whether the policy change actually caused any change in the average wage in New Jersey. 
+
+## Understanding the Movement in Wages
+
+What is the average wage by state, by fast food chain, before and after the policy goes into effect?
+
+```{r, echo = FALSE}
+# use dplyr to check average wage by state and chain
+avgWage <- cardKrueger_clean %>% 
+  group_by(chainName, stateAbbrv) %>%
+  summarise(avgWageBefore = mean(WAGE_ST, na.rm = TRUE), 
+            avgWageAfter = mean(WAGE_ST2, na.rm = TRUE)) %>%
+  # Sort by chain to get like-restaurants next to each other
+  arrange(chainName) %>%
+  # Remove grouping attribute
+  ungroup()
+
+avgWage
+```
+
+## Understanding the Movement in Wages
+
+* There seems to be significant movement in starting wage between these two periods in New Jersey, while Pennsylvania stays relatively constant for each chain. 
+* Let's investigate the movement in wages graphically also:
+    + Make a histogram plot of wages in the two periods using color to indicate the time period. 
+    
+## Understanding the Movement in Wages
+
+```{r, fig.width=6, fig.height=4, warning = FALSE, echo=FALSE}
+# try out ggthemes to change the look of the plot
+ggplot(cardKrueger_clean) +
+  # Need to use geom_ in the following way due to the structure of our data
+  geom_histogram(bins = 15, aes(x = WAGE_ST, fill = "Pre"), alpha = 0.5) +
+  geom_histogram(bins = 15, aes(x = WAGE_ST2, fill = "Post"), alpha = 0.5) +
+  labs(x = "Starting Wage",
+     y = "Density",
+     fill = "Period",
+     title = "Starting Wages in Pre- and Post-Periods") +
+  theme_few() +
+  theme(legend.position = "bottom", legend.title = element_text(size = 7)) +
+  guides(fill = guide_legend(title.position = "top", title.hjust = 0.5))
+
+```
+
+## Understanding the Movement in Wages
+
+What do we learn from our data and plot about the movement in wages between periods?
+
+* Is this enough to know whether the minimum wage increase in New Jersey had an impact on the labor market?
+* Are there differences between chains in the wages paid to employees?
+    * How might this impact (or not impact) our analysis?
+* Do you think stores with higher salaries have cheaper or more expensive food?
+
+## Understanding the Simultaneous Shifts in Employment
+
+* For their measure of employment, Card and Krueger create a **totalEmp** variable that consists of full-time employees, managers, and half of part-time employees.
+
+* Using `mutate()`, create **totalEmp** and **totalEmp2**; variables for total employees in both periods. 
+
+```{r, eval = FALSE, eval=FALSE}
+cardKrueger_clean <- cardKrueger_clean %>%
+  mutate(totalEmp = #code to execute,
+         totalEmp2 = #code to execute))
+```
+
+* What is the total number of employees by state, by fast food chain, before and after the policy goes into effect?
+
+## Understanding the Simultaneous Shifts in Employment
+
+```{r, echo=FALSE, include = FALSE}
+# use dplyr to check number of employees by state and chain
+numEmp <- cardKrueger_clean %>%
+  group_by(chainName, stateAbbrv) %>%
+  summarise(empBefore = sum(totalEmp, na.rm = TRUE),
+            empAfter = sum(totalEmp2, na.rm = TRUE)) %>%
+  # Sort by chain to get like-restaurants next to each other
+  arrange(chainName) %>%
+  # Remove grouping attribute
+  ungroup()
+```
+
+* Recall that `stargazer()` can produce tables presenting statistics. We can present our `numEmp` object using the option `summary = FALSE` in order to supress calculations of descriptive statistics on our sums of total employees.
+
+```{r, results = 'asis', echo = FALSE}
+stargazer(numEmp, summary = FALSE,
+          title = "numEmp Summary",
+          header = FALSE, dep.var.caption = "",
+          omit.stat = c("ser","f"),
+          no.space = TRUE)
+```
+
+## Note on Using `stargazer()` for Summary Tables
+
+Main arguments used for summary statistics tables:
+
+* summary: If TRUE, calculate number of observations, mean, median, max, and min of numeric variables in the input object. If FALSE, output the contents of the input object.
+* rownames: If TRUE, output the rownames (by default these are the row number). If FALSE, suppress rownames from the output.
+* digits: Lets you control how many decimal places to print.
+* ...: Some more!
+
+## Understanding the Simultaneous Shifts in Employment
+
+Make a histogram of employment by region before the minimum wage changes and after.
+
+* We need the graph to show employment by subsets of both region and period (instead of just period, like in the wages histogram we made)
+* In order to do so, we will need to create an indicator variable for period
+* We can use `gather()` to reshape our data into a longer format with **variable**, **value**, and **period** columns, instead of individual columns for each variable
+
+```{r, results = 'hide'}
+empl_PrePost <- cardKrueger_clean %>%
+  gather(-chainName, -stateAbbrv, -location, 
+         key = "variable", value = "value") %>%
+  filter(variable %in% c("EMPFT", "EMPFT2")) %>%
+  mutate(period = ifelse(variable == "EMPFT2", 
+                         "post", "pre")) %>%
+  mutate(period = factor(period, 
+                         levels = c("pre", "post")))
+
+glimpse(empl_PrePost)
+```
+
+Fill in the missing arguments to make the plot.
+``` {r, fig.width=6, fig.height=3.5, warning = FALSE, echo=FALSE, eval=FALSE}
+# plot the data
+ggplot(#data) +
+  geom_histogram(bins = 10, aes(x = #xVar, fill = #fillVar), alpha = 0.8) +
+  labs(x = "Number of Full Time Employees",
+       y = "Density",
+       fill = "Region",
+       title = "Pre- and Post-Period Full Time Employment") +
+  scale_fill_economist() +
+  theme_economist() + 
+  # We can use multiple calls to theme
+  theme(legend.position = "bottom", legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 8)) +
+  facet_grid(. ~ period) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE, title.position = "top", title.hjust = 0.5))
+
+```
+
+What does our plot tell us about differences in employment by region and period?
+
+## Causal Effect
+
+We have seen a number of relationships between variables of interest in our data exploration exercise:
+
+* States have different patterns in wage changes
+* Chains offer different levels of wages to new employees
+* Regions have varying levels of employees per store
+
+What we have not seen, however, is any proof of **causal effect.** Our research goal is to exactly find the effect of wage on employment; to do this we must use regressions.
+
+## OLS Regression
+
+We can start with a straightforward linear regression on pre-period employment and wages. 
+
+* What hypothesis is this regression testing?
+
+```{r}
+preReg <- lm(EMPFT ~ WAGE_ST, cardKrueger_clean)
+```
+
+Use `stargazer()` to see how well our hypothesis performed on the pre-policy-change period. 
+
+## OLS Regression
+
+```{r, eval = FALSE}
+# Call stargazer to create output table; type = "text" will let us review it right in the markdown file
+stargazer(preReg, title = "Pre-period Regression",
+          header = FALSE, dep.var.caption = "",
+          omit.stat = c("ser","f"),
+          no.space = TRUE)
+```
+
+* Is this model doing a good job explaining variations in the employment variable?
+
+## OLS and Fixed Effects
+
+* **Fixed effects** let you limit your analysis to within-group variation. 
+    * For our use case, there is no meaningful difference between a fixed effects estimator and dummy variable estimator; they are computationally equivalent. 
+
+* In a panel data setting fixed effects are most commonly used to account for heterogeneity **between** individual subjects.
+    * This allows your model to get consistent estimates even with structural differences between groups/subjects.
+
+* As an analogy, think about how `group_by()` in the `dplyr` package works.
+    * Fixed effects are similar to running `lm()` after using `group_by()`
+
+##  OLS and Fixed Effects
+
+* Some reasons to use fixed effects:
+    * The variation you see when pooling all observations together might not be of interest to you.
+    * You believe a variable, or any transformation of one, should not enter your model linearly but still does explain variation.
+    * There is a non-numeric variable that you want to include in your model.
+
+* You cannot use fixed effects with a variable if there is not enough variation in each group of the variable.
+    * For example, you could not use fixed effects to treat each observation of our dataset as a "group."
+    * Each group would have just one observation, which is not enough variation to run a regression.
+  
+## OLS, Fixed Effects, and Controls
+
+Which variables (other than wage) did we find to be impactful on employment?
+  
+* Are any of them categorical variables that could be used as fixed effects?
+
+Let's try running the pre-period regression, adding state fixed effects.
+
+```{r, eval = FALSE}
+preReg_fixedState <- lm(#code to execute)
+```
+
+```{r, results = 'asis', echo=FALSE, include = FALSE}
+stargazer(preReg_fixedState, title = "Pre-period Regression with State Fixed Effects",
+          header = FALSE, dep.var.caption = "",
+          omit.stat = c("ser","f"),
+          no.space = TRUE)
+```
+
+We can keep improving our pre-period model by adding control variables to the fixed effects to account for additional variation in employment.
+
+```{r, eval = FALSE}
+#Add controls used in Card and Krueger study
+preReg_controls <- lm(EMPFT ~ WAGE_ST + 
+                        stateAbbrv + HRSOPEN + 
+                        PSODA + PFRY + PENTREE, 
+                      cardKrueger_clean)
+```
+
+## OLS, Fixed Effects, and Controls
+
+Let's compare the results of the `preReg`, `preReg_fixedState`, and `preReg_controls` model using `stargazer()`.
+
+```{r, results = 'hide'}
+stargazer(preReg, preReg_fixedState, preReg_controls,
+          title = "Pre-period Regressions",
+          header = FALSE, dep.var.caption = "",
+          omit.stat = c("ser","f"),
+          no.space = TRUE, 
+          intercept.bottom = FALSE)
+```
+
+## Note on Using `stargazer()` for Regression Output
+
+Main arguments used for regression tables:
+
+* covariate.labels: Labels for the variables listed on the far left, top to bottom
+* dep.var.labels: Labels for the variables listed at the top of each column, left to right
+* title: Title of table
+* keep/omit: Suppress printing out variables you do not want
+* order: Control the order of dependent variables (from top to bottom)
+* intercept.bottom: If set to FALSE, the intercept term is put at the top; the default is TRUE and the intercept is listed last
+* column.labels: Labels for columns
+* ...: And many more!
+
+To find a description of EVERY argument to stargazer try the manual, `?stargazer`.
+
+## Difference-in-Differences (DID)
+
+* An alternative way to approach determining a casual effect is using the difference-in-differences (DID) technique.
+* With the DID technique you are able to make use of treatment and control groups to make causal inferences about the effect of some treatment.
+* The method allows you to find differences between:
+    * a) Treatment and control groups 
+    * b) Multiple time periods
+* Random assignment is not necessary for DID, which makes it a useful tool for quasi-experiments. 
+* DID also accounts for (time-invariant) confounders, or variables that affect both the "x" and the "y" side of your equation.
+
+## The Major Assumption: Parallel Trends
+
+```{r, height = 2, width = 5, echo=FALSE}
+didData <- data_frame(Year = rep(2000:2004, 2),
+                      Treatment = c(rep("Treated", 5), rep("Control", 5)),
+                      Y = c(3:5, 7, 9, 1:5))
+
+counterfac <- data_frame(Year = rep(2000:2004, 2),
+                         Y = rep(3:7, 2))
+
+ggplot(didData, aes(x = Year, y = Y, colour = as.factor(Treatment))) +
+  geom_line(lwd = 1.5) +
+  labs(x = NULL, y = "Outcome", colour = "Treatment", title = "Example of Parallel Trends") +
+  geom_line(aes(x = counterfac$Year, y = counterfac$Y), linetype = 4, lwd = 0.5) +
+  geom_vline(aes(xintercept = 2002), linetype = 5) +
+  theme_hc()
+
+#Tidy up workspace
+rm(didData)
+rm(counterfac)
+```
+
+## The Major Assumption: Parallel Trends
+
+In the example, we are able to clearly see how a treatment, which took effect in 2002, changed the trend line of the treatment group. 
+
+The additional difference in the treatment group in the post-treatment period (after 2002) from the baseline counterfactual (the dotted line) is the DID estimate. 
+
+* The trend observed in the control group must approximate the trend that would have been observed in the treatment group, had they not received the treatment.
+* Variations in original characteristics between control and treatment groups are okay.
+    * Variations in _trends_ between groups are _NOT_ okay.
+    * We want to be able to observe the effect of the treatment.
+* Violation of parallel trends leads to biased estimates.
+    
+## Difference-in-Differences (DID)
+
+Some requirements for DID:
+
+* Admissible data structures include aggregated data, pooled cross-sections, or longitudinal.
+* You must be able to observe both the treatment and control groups:
+    * The treatment group so you can observe the result of treatment.
+    * The control group so you have a baseline comparison to estimate the full effect of the treatment.
+* The control should serve as a counterfactual - it would tell you how the treatment group would look like if no treatment ever occurred.
+
+## Recreating Card and Krueger Using DID
+
+* To recreate Card and Krueger, we'll again be using the **totalEmp** variables that we created for each time period.
+
+* In order to capture the difference in total employment between time periods, create a **changeTotalEmp** variable that measures the change from `totalEmp` to `totalEmp2` using `mutate()`.
+
+```{r, eval = FALSE}
+cardKrueger_clean <-
+  cardKrueger_clean %>%
+  mutate(changeTotalEmp =  #code to execute)
+```
+
+```{r, results = 'asis', echo = FALSE, include = FALSE}
+cardKrueger_clean %>% 
+  summarise(avgEmp = mean(totalEmp, na.rm = TRUE),
+            avgEmp2 = mean(totalEmp2, na.rm = TRUE),
+            avgChange = mean(changeTotalEmp, 
+                             na.rm = TRUE)) %>%
+  stargazer(summary = FALSE,
+          title = "Average Total Employees",
+          header = FALSE, dep.var.caption = "",
+          omit.stat = c("ser","f"),
+          no.space = TRUE, type = "text")
+```
+
+## Recreating Card and Krueger Using DID
+
+* We want to recreate rows 1, 2, and 4 from Card and Krueger's Table 3
+* What steps do we need to take to produce these rows?
+
+* Using `group_by()` and `summarise()` can you get the same state results as Card and Krueger?
+
+```{r, eval = FALSE}
+empAvgs <- # data %>%
+  group_by(# grouping variable) %>% 
+  summarise(preAvgEmp = # code to be executed),
+            postAvgEmp = # code to be executed),
+            avgEmpChange = # code to be executed)) %>%
+  #Remove grouping attribute
+  ungroup()
+```
+
+* Now you can also calculate the differences in state average employment to find the difference between the "control" and "treatment" groups.
+
+```{r, echo = FALSE}
+cardKruegerResults <- empAvgs %>%
+  gather(-stateAbbrv, key = "variable", value = "value") %>%
+  # Creates difference (only for NJ, so we get only NJ - PA)
+  mutate(diff = case_when(stateAbbrv == "NJ" ~ value - lead(value))) %>%
+  # Gathers the difference into its own rows
+  gather(-stateAbbrv, -variable, key = var2, value = value) %>%
+  filter(is.na(value) == F) %>%
+  mutate(stateAbbrv = ifelse(var2 == "diff", "NJ - PA", stateAbbrv)) %>%
+  select(-var2) %>%
+  spread(key = variable, value = value) %>%
+  arrange(c("NJ", "PA", "NJ - PA"))
+```
+
+```{r, echo = FALSE}
+cardKruegerResults <- cardKruegerResults %>%
+  mutate(preAvgEmp = round((preAvgEmp), 2),
+         postAvgEmp = round((postAvgEmp), 2),
+         avgEmpChange = round((avgEmpChange), 2)) %>%
+  # use select to reorder the columns
+  select(stateAbbrv, preAvgEmp, postAvgEmp, avgEmpChange)
+
+cardKruegerResults
+```
+

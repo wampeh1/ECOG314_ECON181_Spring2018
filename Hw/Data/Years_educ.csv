@@ -1,0 +1,26 @@
+Years,Education,Description
+,0,.N/A (less than 3 years old)
+,1,.No schooling completed
+,2,".Nursery school, preschool"
+,3,.Kindergarten
+1,4,.Grade 1
+2,5,.Grade 2
+3,6,.Grade 3
+4,7,.Grade 4
+5,8,.Grade 5
+6,9,.Grade 6
+7,10,.Grade 7
+8,11,.Grade 8
+9,12,.Grade 9
+10,13,.Grade 10
+11,14,.Grade 11
+11.5,15,.12th grade - no diploma
+12,16,.Regular high school diploma
+12,17,.GED or alternative credential
+12.5,18,".Some college, but less than 1 year"
+13.5,19,".1 or more years of college credit, no degree"
+14,20,.Associate's degree
+16,21,.Bachelor's degree
+18,22,.Master's degree
+19,23,.Professional degree beyond a bachelor's degree
+22,24,.Doctorate degree

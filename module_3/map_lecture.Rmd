@@ -1,0 +1,301 @@
+---
+title: "Module 3 Day 2 ROUGH-ROUGH DRAFT"
+output: pdf_document
+---
+
+```{r, message=F, warning=F}
+library(tidyverse)
+library(lubridate)
+
+library(stringr)
+
+library(plotly)
+library(gapminder)
+library(maps)
+library(animation)
+library(scales)
+library(stargazer)
+
+```
+
+Goals 
+
+  Chat about Developmental Economics
+  
+  Use data to learn some stylized facts about developing nations 
+  
+  Growth vs. Development
+  
+  Use fixed effects 
+
+  Use maps to visualize data 
+ 
+  Create gifs to visualize dynamics in maps
+  
+
+```{r}
+world_data <- gapminder
+head(gapminder)
+```
+
+year - every 5 years 
+
+lifeExp - life expectancy 
+
+pop - population 
+
+gdpPercap - gdp percapita 
+
+Investigate the relationship between life expectancy and GDP percapita 
+
+```{r}
+world_data %>%
+  ggplot(aes(gdpPercap, lifeExp)) +
+  geom_point() 
+```
+
+Class are now plotting pros! 
+
+In class exercise: Fix up the above plot and differentiate the observations by contitinet. I would suggest to use scale_x_log10(), if you do not know what this function does please google it or type ?scale_x_log10() into you counsle 
+
+
+Here is our attempt at a better plot!
+```{r}
+world_data %>%
+  ggplot(aes(gdpPercap, lifeExp, color = continent)) +
+  geom_point() +
+  scale_x_log10(labels = comma) +
+  xlab("Log of GDP Per Capita") +
+  ylab("Life Expectancey") +
+  ggtitle("Relationship of GDP Per Capita and Life Expectancy")
+  
+```
+
+Qucik digression about on about measurements of development and growth/wealth
+
+Difference between economic growth and economic delevopment
+
+
+How do we measure growth? Growth of GDP
+
+How do we measure development? Education Attainment, Life Expectancy, Acess to Utilities, Stability of Infustructure, UN Development Index
+
+Intertangled relationship between growth and development.
+
+How much of economic growth explains development?
+
+To anwser, or an idea of an anwser, we use regression analysis! 
+
+Here is our benchmark model
+
+```{r}
+benchmark <- lm(lifeExp ~ gdpPercap, data = world_data)
+summary(benchmark)
+```
+Interpret results of benchmark model.
+
+Evaluate the performance fo this model.
+
+What tools did you just use? fit measures, significance of the coefficents, standard errors?
+
+What about missing variables? Are adding variables always "better"? 
+
+Are there any missing factors that could effect Life Expectancy and are correlated with GDP per capita?
+
+Our data has its limits, but can we do anything to imporve the estimates? Fixed Effects?
+```{r}
+better_reg <- lm(lifeExp ~ gdpPercap + factor(year), data = world_data)
+summary(better_reg)
+```
+
+Class Exercise: Run the baseline model with just time FEs, just continent FEs, and both. Put the baseline model and all three of the regressions, so a total of four regressions, into a stargazer table! Please exclude the coefficents reported on the fixed effects, but indicate what regression has which fixed effects. 
+
+
+```{r}
+benchmark <- lm(lifeExp ~ gdpPercap, data = world_data)
+time_fe <- lm(lifeExp ~ gdpPercap + factor(year), data = world_data)
+country_fe <- lm(lifeExp ~ gdpPercap + factor(continent), data = world_data)
+both_fe <- lm(lifeExp ~ gdpPercap + factor(year) + factor(continent), data = world_data)
+
+
+stargazer(benchmark, time_fe, country_fe, both_fe,
+          type = "text",
+          covariate.labels = c("GDP Per Capita"),
+          omit = c("factor"), 
+          add.lines = list(c("Time Fixed Effects?", "No", "Yes", "No", "Yes"),
+                           c("Continet Fixed Effects?", "No", "No", "Yes", "Yes"))
+          )
+```
+
+
+Why did we not suggest to do country and time fixed effects? 
+
+Think about the strucutre of this data?
+
+How many observation for each country per year? 
+
+```{r}
+country_time_fe  <- lm(lifeExp ~ gdpPercap + factor(year) + factor(country), data = world_data)
+
+stargazer(country_time_fe,
+          type = "text",
+          covariate.labels = c("GDP Per Capita"),
+          omit = c("factor")
+          )
+
+```
+
+Looks amazing!!! 
+
+Wait, there is a sign flip?
+
+Due to overfitting? If we have dummies for every observation the coefficent infront of GDP per capita become meaningless 
+
+Now that we reviewed our plotting and regression skills lets learn something new! 
+
+Vizualizing data in maps is a powerful tool
+
+An easy way to show "clustering" - like things are typically next to each other 
+
+Creating our first map - let's be ambitous! Lets map the world, but first let's look at the mapping data
+```{r}
+world <- map_data("world")
+head(world)
+```
+
+Think of the data as a bunch of points where R is smart enough to just draw lines through the points
+
+Ordering matters in this type of geospatial data - so don't go too crazy on it!!!
+
+There are many types of way to store geographic data, and the type of data we are working with is the easiest.
+
+Just be careful if you are wanting to do maps in the future, most of the time you will be given shape files which are its own special thing.
+
+Mapping, in this lecture, works the exact same as a normal ggplot
+
+There is a new "layer" called polygon
+
+Note that the x variable is longitude and the y variable is lattitude
+
+It common for people to say "latt, long" instead of "long, latt", either way to say it is fine, but   when working with geographic data 90% of the time your x variable will be long and your y variable will be latt
+
+```{r}
+world %>% 
+    ggplot(aes(x = long, y = lat, group = group)) +
+    geom_polygon(fill = "gray", color = "black", size = 0.3)
+```
+
+Let's get rid of the of the axes, lines, and change the countries to be the color "tomato"
+
+```{r}
+no_axes <- theme(
+  axis.text = element_blank(),
+  axis.line = element_blank(),
+  axis.ticks = element_blank(),
+  panel.border = element_blank(),
+  panel.grid = element_blank(),
+  axis.title = element_blank())
+
+world %>% 
+    ggplot(aes(x = long, y = lat, group = group)) +
+    geom_polygon(fill = "tomato", color = "black", size = 0.3) +
+    no_axes
+
+```
+
+
+Now lets merge our world_data with our maps to be able to plot maps that have data
+
+Right now why don't we just look at Africa? 
+
+
+```{r}
+africa <- world_data %>%
+  filter(continent == "Africa") %>%
+  inner_join(world, by = c("country" = "region"))
+#need to make country a character
+```
+
+
+Now let's plot Africa, for the year 2007! 
+
+
+```{r}
+africa %>% 
+  filter(year == 2007) %>%
+  ggplot() + 
+    geom_polygon(aes(long, lat, group = group), fill = "grey", color = "black") +
+    no_axes
+```
+What is wrong? Why are there holes? 
+
+How many countries are in Africa? 
+
+Did some get dropped in the merge? 
+
+Due to the data on GDP and Life Expentancy only covering countries that have been in exsitance since 1952, there is disagreement between the data sets on what should be the name of the countires. Thus durning the merge these countries were dropped
+
+This is fine for now! 
+
+Now let us plot a heat map of the Life Expectancy of the countries in Africa durning the year of 2007! 
+The brighter colors indicate a higher life expectancy 
+
+```{r}
+africa %>% 
+  filter(year == 2007) %>%
+  ggplot() + 
+    geom_polygon(aes(long, lat, group = group, fill = lifeExp), color = "black") +
+    no_axes
+```
+
+What improvements could be made? 
+
+Remember plotting maps with ggplot is similar to regular plots, so the same "fixes" apply
+
+```{r}
+africa %>% 
+  filter(year == 2007) %>%
+  ggplot() + 
+    geom_polygon(aes(long, lat, group = group, fill = lifeExp), color = "black") +
+    no_axes +
+    ggtitle("Heat Map of African Country's Life Expectancy") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    guides(fill = guide_legend(title = "Life Expectancy")) 
+    #scale_fill_gradient(colours = jet.colors) #changing the color scale is being a bit weird 
+```
+
+IN CLASS EXERCISE: Please plot a heat map of the European's Countries Per Capita GDP for the year 2007?
+
+```{r}
+world_data %>%
+  filter(continent == "Europe") %>%
+  inner_join(world, by = c("country" = "region")) %>%
+  filter(year == 2007) %>%
+  ggplot() + 
+    geom_polygon(aes(long, lat, group = group, fill = gdpPercap), color = "black") +
+    no_axes +
+    ggtitle("Heat Map of European Countries GDP Per Capita") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    guides(fill = guide_legend(title = "GDP Per Capita"))
+#Need to fix GB, variable type, and color scale
+```
+
+
+
+Currently I am trying to see if there a more friendly way to do the animation, if not we can just plot the capitals of the nations. 
+
+```{r}
+#span <- seq(1952,2007,5)
+#plot_list <- list(seq(1,12))
+#for (i in seq(1,12)){
+  #plot_list[i] <- africa %>% 
+  #filter(year == span[i]) %>%
+  #ggplot() + 
+    #geom_polygon(aes(long, lat, group = group, fill = lifeExp), color = "black") +
+    #ditch_the_axes
+  #}
+```
+
+
+
+

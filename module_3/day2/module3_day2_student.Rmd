@@ -1,0 +1,481 @@
+---
+title: "module3_day2_student"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size = "tiny", width = 50, fig.height = 3.5, fig.width = 5)
+
+library(tidyverse)
+library(plotly)
+library(stargazer)
+library(ggthemes)
+```
+
+## Game Plan for the Day 
+
+* Investigate some development data 
+    * Measuring growth vs. measuring development
+    * Precanned objects in functions 
+    * Relationship between wealth and development 
+
+* Plotting maps in R
+    * Create maps with ggplot
+    * Incorporate data with maps 
+  
+## Packages with Precaned Data Frames 
+
+  * Some packages include sample data frames to play around with when you install it
+  
+  * Examples include Starwars Movie characters, stock prices, and movie ratings 
+  
+  * Precanned data frames allow you skip loading data in, when you want to investigate the usage of the packages! 
+
+## Loading in Precanned Data 
+```{r}
+library(gapminder)
+world_data <- gapminder
+head(world_data)
+```
+
+## Quick Glance at the data
+```{r}
+library(gapminder)
+world_data <- gapminder
+world_data$country <- as.character(world_data$country)
+head(world_data)
+```
+
+## Quick questions about the data 
+
+* What frequency is data reported at?
+
+* What variable is measuring quality of life (i.e Development)?
+
+
+## Development vs. Growth 
+
+* \textbf{Economic Growth} is the study of how economies grow through technology, research, and investments innovations.
+
+* What recent technological innovations do you think that have attributed to growth in the American economy?
+
+* \textbf{Development Economics} is the study of how nations improve the economic, political, and social well-being of its people. 
+
+* How can we measure development?
+
+## The Relationship between Economic Growth and Development 
+
+* Is there a correlation between a country's wealth and how "developed" it is?  
+
+* How much of a country's development is due to the country's wealth?
+
+* This is our research question for the day! 
+
+* How would we investigate this relationship with our data? 
+
+## Plotting the relationship between GDP Per Capita and Life Expectancy
+
+```{r}
+world_data %>%
+  ggplot(aes(gdpPercap, lifeExp)) +
+  geom_point() 
+```
+
+## In Class Exercise 1: Make a pretty plot!!!
+
+* Y'all are now plotting pros! 
+
+* Fix up the previous plot and differentiate the observations by Continent. 
+
+* I would suggest to use scale_x_log10(), if you do not know what this function does please google it or type ?scale_x_log10() into you console 
+
+## In Class Exercise 1: Solution
+
+```{r}
+world_data %>%
+  ggplot(aes(gdpPercap, lifeExp, color = )) +
+  geom_point() +
+  scale_x_log10() +
+
+  
+```
+
+## Creating a Benchmark Model 
+
+```{r}
+benchmark <- lm(lifeExp ~ log(gdpPercap), data = world_data)
+stargazer(benchmark, type = 'text', header = FALSE)
+```
+
+## Interpreting and Performance our Benchmark Model 
+* What dose a 1% increase in GDP Per Capita have on life expectancy? Remember that this is a level-log regression! 
+
+* Is our coefficient statistically significant? Is it economically significant?
+
+* What about missing variables that could explain the variation in Life Expectancy?
+
+* Our data has its limits, but econometric tool can we use to improve the estimates? 
+
+## Incorporating Time Fixed Effects 
+
+```{r}
+time_fe_reg <- lm(lifeExp ~ log(gdpPercap) + factor(year), 
+                  data = world_data)
+stargazer(time_fe_reg, header = FALSE, type = 'text')
+```
+
+
+## Presenting Factor Models 
+
+```{r}
+stargazer(benchmark, time_fe_reg, header = FALSE,
+          type = "text",
+          covariate.labels = c("Log GDP Per Capita"),
+          omit = c("factor"), 
+          add.lines = list(c("Time Fixed Effects?", 
+                             "No", "Yes"))
+          )
+```
+
+## Did Time Fixed Effects Help?
+
+* How do we know? What tools did you use to say yes or no? 
+
+* Still missing variables that explain the variation between countries 
+
+* Let's add country fixed effects!
+
+## In Class Exercise 2: Country Fixed Effects 
+
+* Run a regression named "country_fe_reg" with just country fixed effects
+
+* Run a regression named "both_fe_reg" with both time and country fixed effects 
+
+* Put benchmark, time_fe_reg, country_fe_reg, and both_fe_reg into a stargazer table
+
+* Please exclude the coefficients reported on the fixed effects, but indicate what regression has which fixed effects. 
+
+## In Class Exercise 2: Solution
+
+```{r}
+benchmark <- lm(lifeExp ~ log(gdpPercap), 
+                data = world_data)
+time_fe <- lm(lifeExp ~ log(gdpPercap), 
+              data = world_data)
+country_fe <- lm(lifeExp ~ log(gdpPercap), 
+                 data = world_data)
+both_fe <- lm(lifeExp ~ log(gdpPercap), 
+              data = world_data)
+
+stargazer(benchmark, time_fe, country_fe, both_fe, header = FALSE,
+          type = "text",
+          covariate.labels = c("Log of GDP Per Capita"),
+          omit = c("factor"), 
+          add.lines = list(c("Time Fixed Effects?", 
+                             "No", "Yes", "No", "Yes"),
+                           c("Country Fixed Effects?", 
+                             "No", "No", "Yes", "Yes"))
+          )
+```
+
+## In Class Exercise 2: Interpreting Results
+
+* What is the "best" model?
+
+* Is the model with time and country fixed effects over-fitted?
+
+## How do I pick what fixed effects to use?
+
+* We could have done country fixed effects, but why did I suggest to do country fixed effects instead?
+
+* Are some fixed effects "better" than others? 
+
+* There is no "rule" on what type of fixed effects to use when, but there are "guide lines"...
+
+## Vizualizing Data with Maps 
+
+* Powerful tool
+
+* Depicts clustering 
+
+* We will be using another precanned data set from the 'maps' package
+
+## Loading in Map Data 
+
+```{r}
+library(maps)
+
+world_map <- map_data("world")
+head(world_map)
+
+```
+
+## Geographic Data in R 
+
+* Think of the data as a bunch of points where R is smart enough to just draw lines through the points
+
+* Ordering matters in this type of geospatial data - so don't go too crazy on it!!!
+
+* There are many types of way to store geographic data, and the type of data we are working with is the easiest.
+
+## Geographic Data in R pt. 2
+
+* Mapping, in this lecture, works the exact same as a normal ggplot
+
+* There is a new "layer" called polygon
+
+* Note that the x variable is longitude and the y variable is latitude
+
+* It common for people to say "lat, long" instead of "long, lat", either way to say it is fine, but when working with geographic data 90% of the time your x variable will be long and your y variable will be lat
+
+## Our First Map
+
+```{r}
+world_map %>% 
+    ggplot(aes(x = long, y = lat, group = group)) +
+    geom_polygon(fill = "gray", color = "black", 
+                 size = 0.3)
+
+```
+
+## Our First Map - Improvements 
+
+* What are some improvements we can make to this map?
+
+* Since we are using ggplots we can make the same improvements in the same manner 
+
+* The only tricky part is removing the axes 
+
+## Our First Map - Removing the axes 
+
+```{r}
+no_axes <- theme(
+  axis.text = element_blank(),
+  axis.line = element_blank(),
+  axis.ticks = element_blank(),
+  panel.border = element_blank(),
+  panel.grid = element_blank(),
+  axis.title = element_blank())
+
+world_map %>% 
+    ggplot(aes(x = long, y = lat, group = group)) +
+    geom_polygon(fill = "gray",
+                 color = "black", size = 0.3) +
+    no_axes +
+    coord_equal()
+
+```
+
+
+## Plotting a single continent 
+
+* Take a look at our world_map data
+
+* Can is there a continent field? 
+
+* How can we fix this? 
+
+* Luckily you know R and if you google enough there is almost always a package that does what you want!
+
+## 'countrycode' package
+
+* This package lets you take country names and map them to a country code, a continent, or a region 
+
+* we will be using the countrycode() function from this package
+
+* How do we see how a function works?
+
+## Adding continent names with countrycode()
+
+```{r}
+# install.packages('countrycode')
+library(countrycode)
+
+world_map <- world_map %>%
+  mutate(continent = countrycode(sourcevar = world_map[, "region"],
+                        origin ="country.name",destination="continent"))
+head(world_map)
+```
+
+
+## Plotting a single continent - Africa! 
+
+```{r, echo = FALSE}
+world_map %>%
+  filter(continent == "Africa") %>%
+  ggplot() + geom_polygon(aes(long, lat, group = group), 
+                          fill = "grey", color = "black") +
+  no_axes +
+  coord_equal() 
+
+```
+
+
+## In Class Exercise 3: Plot your favorite continent! 
+
+* First provide me a vector with the unique continents that we can map. How does it look?
+
+* Provide me a dataframe of countries who have NA as their continent. Why do you think they are NA?
+
+* Please plot your favorite continent, and change the color of the countries to your favorite color! 
+
+## In Class Exercise 3: Solution unique ! 
+
+```{r}
+
+#write the code to find the unique continents that show up in the world_map data frame
+
+```
+
+## In Class Exercise 3: Soultion pt. 2! 
+
+```{r}
+#find countries where their continent is NA
+
+NA_continent <- filter()
+head(NA_continent)
+```
+
+## In Class Exercise 3: Soultion pt. 3! 
+
+```{r}
+world_map %>%
+  filter(continent == "") %>%
+  ggplot() + geom_polygon(aes(long, lat, group = group), 
+                          fill = "", color = "black")   +
+  no_axes +
+  coord_equal() 
+
+```
+
+## Quick Spatial Data Style Aside 
+
+* If you have noticed, throughout class there are certain "styles" to follow when programming in R and visualizing data 
+
+* In this class we try to teach and follow the style laid out by Hadley Wickman (the R guru)
+
+* Just like R, Spatial Data Science has some style rules
+
+* One important rule, is that you should not make the color of countries or land blue! 
+
+* Blue is reserved for water! 
+
+## Let's add data to our maps! 
+
+* Now that we are pros at plotting basic maps, lets add some depth to them! 
+
+* The goal is now to visualize the GDP per capital and Life Expectancy between different countries using a \textbf{heat map}
+
+* This means we must merge our world_map with our world_data 
+
+* What variable will be merging on?
+
+## Right Join or Inner Join? That is the question! 
+
+* Assuming that we will merge the data frames with world_data being the left and world_map being the right data frame, should we use an inner or right join?
+
+* Well lets try merging both ways and map Africa!
+
+* From there we can pick which join we should use
+
+
+## Inner Join 
+```{r}
+world_inner <- world_data %>%
+  filter(year == 2007) %>%
+  inner_join(world_map, world_data, by = c("country" = "region" ))
+  
+  
+world_inner %>%  
+  filter(continent.y == "Africa") %>%
+  ggplot() + 
+  geom_polygon(aes(long, lat, group = group), 
+               fill = "grey", color = "black") +
+  no_axes +
+  coord_equal()
+
+  
+```
+
+## Right Join 
+```{r}
+world_right <- world_data %>%
+  filter(year == 2007) %>%
+  right_join(world_map, world_data, by = c("country" = "region" ))
+  
+world_right %>%
+  filter(continent.y == "Africa") %>%
+  ggplot() + 
+  geom_polygon(aes(long, lat, group = group), 
+               fill = "grey", color = "black") +
+  no_axes +
+  coord_equal() 
+
+  
+```
+
+## Right Join Wins - Why?
+
+* Why are there holes in Africa when use the inner join?
+
+* What is the difference between continent.x and continent.y? Which variable belongs to which dataframe?
+
+* Now lets make our first heat map of life expectancy!!!
+
+## Our first Heat map of Life Expectancy! 
+
+```{r}
+world_right %>% 
+  filter(continent.y == 'Africa') %>%
+  ggplot() + 
+  geom_polygon(aes(long, lat, group = group, fill = lifeExp), 
+               color = "black") +
+  no_axes +
+  coord_equal()
+
+```
+
+## Improvements? 
+
+* Why are there grey parts? 
+
+* How can we make the map better? 
+
+* Luckily, since we are using ggplot we can make improvements in the same manner that we have been doing!
+
+## Improved Heat Map 
+
+```{r}
+world_right %>%
+  filter(continent.y == "Africa") %>%
+  ggplot() + 
+    geom_polygon(aes(long, lat, group = group, fill = lifeExp), color = "black") +
+    no_axes +
+    coord_equal() +
+    ggtitle("Heat Map of Life Expectancy in Africa") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    scale_fill_distiller(palette = "Spectral")+
+    guides(fill = guide_legend(title = "Life Expectancy"))
+
+```
+
+## In Class Exercise 4: European Heat Map 
+
+* Please plot a heat map of the European countries' Per Capita GDP for the year 2007
+
+## In Class Exercise 4: Solution 
+
+```{r, echo = TRUE, eval=FALSE}
+
+world_right %>%
+  filter(continent.y == "") %>%
+  ggplot() + 
+    geom_polygon(aes(long, lat, group = group, fill = gdpPercap), color = "black") +
+    no_axes +
+    coord_equal(ratio = ) +
+    ggtitle("Heat Map of GDP PC for Europe") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    scale_fill_distiller(palette = "Spectral") +
+    guides(fill = guide_legend(title = "GDP Per Capita"))
+

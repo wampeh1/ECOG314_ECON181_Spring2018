@@ -1,0 +1,375 @@
+---
+title: "Module 2"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, size = "tiny", width = 50, fig.height = 3.5, fig.width = 5, warning = FALSE)
+
+library(tidyverse)
+library(broom)
+library(stargazer)
+
+setwd("//mq/home/m1icd00/Class_Materials/Spring_2018/module_2/day_5/")
+joined_data <- read_csv("joined_data_v3.csv")
+```
+
+## Recap Last Week
+* Reviewed dates in R
+    + `as.Date()`
+    + Different date formats
+    + Used math to create date variables
+* Reviewed how to create simple linear regressions using `lm()`
+* Reviewed how to display our results in `stargazer()`
+* Performed a preliminary exploration of the relationship between home prices and distance from the metro
+
+## Recap Last Week
+```{r,echo=FALSE, results= 'asis'}
+ex_model <- lm(PRICE/SQUARE.FEET ~ metro_distance + days_on_market + 
+                 STATE + PROPERTY.TYPE + BATHS, data = joined_data)
+
+stargazer(ex_model, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Goals for Today
+
+R:
+
+* Create non-linear models in R
+* Review how to save fitted values and residuals
+
+Economics:
+
+* Investigate non-linear relationship of location and distance on home prices
+* Familiarize ourselves with different methods to account for non-linear effects
+
+## Getting Started
+* Let's read in the updated version of our data
+    + Cleaned
+    + Includes `metro_distance` and `days_on_market`
+
+```{r, eval = FALSE}
+library(tidyverse)
+library(stargazer)
+
+setwd( ) #Include your directory here
+joined_data <- read_csv("joined_data_v3.csv")
+```
+## Introduction to Non-Linear Models
+
+* Made some improvements to our model, but we can still do better
+* Let's think more about metro distance
+    + As we move farther away from the metro, distance probably matters less
+    + The effect of distance likely varies from state to state
+* We are unable to investigate either of the above relationships with a simple linear model
+
+## Looking Back at Distance
+```{r, echo = FALSE, warning=FALSE}
+joined_data %>% 
+    mutate(price = PRICE/SQUARE.FEET) %>%     
+ggplot() +
+    geom_point(aes(x = metro_distance, y = price)) +
+    labs(title = "Price vs Distance from Metro Station",
+         y = "USD/Sq ft.",
+         x = "Miles",
+         caption = "Source: Redfin and WMATA")+
+  scale_y_continuous(limits = c(-50, 1500)) +
+  theme_minimal()
+```
+
+## Adding A Quadratic Term
+
+* In our previous models, moving from 0.5 to 0.6 miles away from the metro has the same effect on price as 2.9 to 3.0 miles away
+* Can imagine that people pay extra to live in walking distance
+    + The farther we move away from the metro, the less distance affects price
+* We are able to apply mathematical transformations to the continous variables in our model
+    + We would like to use a quadratic term in our model
+
+## Adding A Quadratic Term
+
+* There are two ways we can include a quadractic term in our data:
+    1. Using formula functions provided by R
+    2. Constructing a new variable called `dist_sq` and adding it to the model
+
+* First, let's try to use the caret to take the exponenet
+```{r}
+dist_OLS <- lm(PRICE/SQUARE.FEET ~metro_distance,
+               data = joined_data)
+dist_sq <- lm(PRICE/SQUARE.FEET ~ metro_distance + 
+                                  metro_distance^2,
+                data = joined_data)
+```
+
+## Did It Work?
+
+```{r, echo = FALSE, results='asis'}
+stargazer(dist_OLS, dist_sq, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Correcting Our Formula
+
+* When we are working with formulas in R, our math operators have different meanings
+    + ^ and * are used to create interactions
+* Use `I()` to apply our math operators
+
+```{r}
+dist_sq <- lm(PRICE/SQUARE.FEET ~ metro_distance + 
+                                I(metro_distance^2),
+                data = joined_data)
+```
+
+## Did It Work?
+```{r, echo = FALSE, results='asis'}
+stargazer(dist_OLS, dist_sq, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T)
+```
+
+## Manually Constructing the Variable
+
+* We should be right but let's double check to be sure
+* Create a new variable `metro_sq` and use it to create a non-linear regression model
+    + Compare this new model with the previous model in `stargazer()`
+    + Are the coefficients the same?
+
+## Interpreting Our Results
+
+* Let's look back at our regression table, do the magnitidues in our table make sense?
+* Direct interpretation of our coefficients becomes much more difficult
+    + The effect changes as we move farther away from a metro station
+    + Should check when the effect of metro distance becomes 0
+    + Can evaluate the effect at the mean metro distance
+* Helpful to create a graph to visualize this relationship
+
+## broom()
+* Recall our 3 main functions from the broom package
+    + `tidy()` - for creating a data frame of component statistics
+    + `augment()` - for observation level statistics (like fitted values and residuals)
+    + `glance()`- for model level statistics (like R-squared etc.)
+* We'll want to use `augment()` to plot our fitted values
+
+
+## Visulaizing the Relationship
+```{r, warning=FALSE, echo = FALSE}
+library(broom)
+dist_sq_augmented <- augment(dist_sq, joined_data)
+
+dist_sq_augmented %>% 
+  mutate(price = PRICE/SQUARE.FEET) %>%     
+ggplot() +
+  geom_point(aes(x = metro_distance, y = price))+
+  geom_line(aes(x = metro_distance, y = .fitted), color = "red") +
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD/Sq ft.", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  scale_y_continuous(limits = c(-50, 1500)) +
+  theme_minimal()  
+```
+
+## Visulaizing the Relationship
+* Fill in the code to create the graph from the previous slide
+
+\scriptsize
+```{r, warning=FALSE, eval = FALSE}
+library(broom)
+dist_sq_augmented <- augment( , )
+
+dist_sq_augmented %>% 
+  mutate(price = PRICE/SQUARE.FEET) %>%     
+ggplot() +
+  geom_point(aes(x = , y = ))+
+  geom_line(aes(x = , y = ), color = ) +
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD/Sq ft.", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  scale_y_continuous(limits = c(-50, 1500)) +
+  theme_minimal()  
+```
+
+## Interactions
+* Sometimes the effect of certain variables differs across groups in our data
+* The importance of distance from the metro likely varies from state to state
+    + Why might that be the case?
+* To account for this type of non-linear effect we use an interaction term
+    + $\text{Price/Sq Ft} = \beta_0 + \beta_1 \text{distance} + \beta_2\text{MD}+ \beta_3\text{VA} + \beta_4\text{MD}\times\text{distance} + \beta_5\text{VA}\times\text{distance}$
+    
+## A Closer Look at Interactions
+* Adding dummy variables changes the *intercept* of our equations, while interactions change the *slope*
+* In our model, we have 3 seperate equations for each state:
+Plugging in for the values of our dummy variables we can solve for 3 seperate equations:
+    1. *DC*:   $\text{(Price/Sq Ft)} = \beta_0 + \beta_1 \text{distance}$
+    2. *MD*:   $\text{(Price/Sq Ft)} = (\beta_0 + \beta_2) + (\beta_1+\beta_3) \text{distance}$
+    3. *VA*:   $\text{(Price/Sq Ft)} = (\beta_0 + \beta_3) + (\beta_1+\beta_4) \text{distance}$
+    
+## Visualizing the Changes: Just Dummies
+```{r, echo = FALSE}
+state_reg <- lm(PRICE/SQUARE.FEET ~ metro_distance + STATE, 
+                data = joined_data)
+
+augment(state_reg, joined_data) %>%
+ggplot() +
+  geom_line(aes(x = metro_distance, y = .fitted,
+                color = STATE, linetype = STATE)) +
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD/Sq ft.", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  theme_minimal()
+
+```
+
+## Visualizing the Changes: With Interactions
+```{r, echo = FALSE}
+inter_reg <- lm(PRICE/SQUARE.FEET ~ metro_distance + STATE +
+                STATE*metro_distance, 
+                data = joined_data)
+
+augment(inter_reg, joined_data) %>%
+ggplot() +
+  geom_line(aes(x = metro_distance, y = .fitted,
+                color = STATE, linetype = STATE)) +
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD/Sq ft.", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  theme_minimal()
+
+```
+
+## Modeling Interactions in R
+* Luckily, our * operator functions the way we think it would when we work with interactions
+    + Make sure to include all of the components for your interaction in the model
+
+```{r, eval = FALSE}
+inter_reg <- lm(PRICE/SQUARE.FEET ~ metro_distance + 
+                STATE + STATE*metro_distance, 
+                data = joined_data)
+```
+
+## Is Our Intuition Correct?
+```{r, echo=FALSE, results='asis'}
+stargazer(state_reg, inter_reg, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T, font.size = "scriptsize")
+```
+
+## Evaluating Our Model
+* Has our model improved? How can you tell?
+* What would be the affect of living one mile farther from the metro in Maryland be?
+* Do homes in Maryland tend to be more or less expensive than homes in Virginia as they move further away from the metro?
+
+
+## Evaluating Our Model
+```{r, echo=FALSE}
+augment(inter_reg, joined_data) %>%
+ggplot() +
+  geom_boxplot(aes(x = STATE, y = .resid)) +
+  ylim(c(-500, 1000)) +
+  labs(title = "Interaction Model Residuals",
+       y = "USD/Sq ft.", x = "Miles",
+       caption = "Source: Redfin and WMATA",
+       color = "")+
+  theme_minimal()
+```
+
+## Improving Our Model Further
+* Create a regression model that investigates the relationship between the distance from a metro and the price per square foot of a home
+    + You are free to use any variable in our data set
+    + Include at least 1 interaction
+    + Use `augment()` and `ggplot()` to plot the residuals of your model. Are we over- or under-predicting?
+
+## Accounting for Non-Linearities
+```{r, echo=FALSE}
+joined_data %>%
+ggplot()+
+  geom_histogram(aes(x = PRICE))+
+   labs(title = "Distribution of Prices",
+       y = "Count", x = "Sq Ft",
+       caption = "Source: Redfin and WMATA",
+       color = "")+
+  theme_minimal()
+```
+
+## Accounting for Non-Linearities
+* The distribution of our price data is heavily skewed to the right
+* Can transform our variables to account for this
+  + We've been accounting for this by using price per square foot
+  + Unfortunately we can't use some variables in our analysis
+
+## The Natural Log
+* A common remedy we use in economics is the natural log
+    + Particularly for income data
+* Recall the three important assumption we make to use regression analysis
+    + Want our data to be normally distributed
+* `log()` allows us to take the natural log of a vector of numbers
+
+\scriptsize
+```{r}
+joined_data <- joined_data %>%
+  mutate(lprice = log(PRICE))
+```
+
+## Should We Use the Natural Log
+
+```{r, echo = FALSE}
+joined_data %>%
+ggplot() +
+  geom_point(aes(x=metro_distance, y=PRICE))+
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  theme_minimal()
+```
+
+## Should We Use the Natural Log
+
+```{r, echo = FALSE}
+joined_data %>%
+ggplot() +
+  geom_point(aes(x=metro_distance, y=lprice))+
+  labs(title = "Price vs Distance from Metro Station",
+       y = "USD", x = "Miles",
+       caption = "Source: Redfin and WMATA")+
+  theme_minimal()
+```
+
+## Moving Ahead
+```{r, echo=FALSE, results='asis'}
+log_reg <- lm(lprice ~ SQUARE.FEET + metro_distance +
+                I(metro_distance^2) +
+                STATE + STATE*metro_distance, 
+                data = joined_data)
+
+stargazer(inter_reg, log_reg, header = F, dep.var.caption = "",
+          title = "Impact of Distance From Metro on Price",
+          omit.stat = c("ser", "f"),
+          no.space = T, font.size = "scriptsize")
+```
+
+
+## Interpreting Our Results
+
+* We can use this table as a general guideline when interpreting log coefficients:
+
+\scriptsize
+\begin{center}
+ \begin{tabular}{||c | c c c||} 
+ \hline
+ Model & Dependent Variable & Independent Variable & Interpretaion of $\beta_{1}$ \\ [0.5ex]
+ \hline\hline
+ Level-level & y & x & $\Delta y = \beta_{1} \Delta x$ \\ 
+ \hline
+ Level-log & y & log(x) & $\Delta y = (\beta_{1}/100)\% \Delta x$ \\ 
+ \hline
+ Log-level & log(y) & x & $\%\Delta y = (100\beta_{1}) \Delta x$ \\ 
+ \hline
+ Log-log & log(y) & log(x) & $\%\Delta y = (\beta_{1}/100)\% \Delta x$ \\
+ \hline
+\end{tabular}
+\end{center}

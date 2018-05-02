@@ -1,0 +1,924 @@
+---
+title: "Module 2"
+date: "March 9, 2018"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, size = "tiny",
+                      fig.height = 2.5,
+                      fig.width = 4.5,
+                      fig.align = "center", width = 50, 
+                      tidy.opts=list(width.cutoff=48),tidy=TRUE)
+
+#install.packages("stringr")
+library(stringr)
+library(spatstat)
+library(dplyr)
+library(scales)
+library(ggplot2)
+library(stargazer)
+library(Hmisc)
+library(lubridate)
+library(readr)
+#install.packages("scales")
+library(scales)
+setwd("/if/fame/afe/usr/amonken/Howard/Class_Materials/Spring_2018/module_2/day_2")
+```
+
+# Day 2
+
+## Recap Last Week
+
+\centerline{\includegraphics[height=3in]{./Reference/for_loop.png}}
+
+## For-loops: Warm Up Exercise
+
+* Cubing every number from 1 to 8 and print the results
+
+```{r, eval = F}
+
+for(num in    ){
+    print(     **3) 
+}
+
+```
+
+## Recap Last Week - In-Class Exercise
+* Like we did last class, let's convert this vector of substrings into a single string. Make sure to use meaningful variable names in your code. (Hint: Use the paste function.)
+
+```{r, eval = FALSE}
+string_vec <- c("Economics","is","the","best","subject!")
+
+## initialize the variable
+
+for(item in string_vec){
+  ## code to be executed
+}
+
+```
+
+
+```{r "In-class answer", include = FALSE}
+string_vec <- c("Economics","is","the","best","subject!")
+
+## initialize the variable
+phrase = NULL
+
+for(item in string_vec){
+  phrase = paste(phrase, item)
+}
+
+print(phrase)
+```
+
+
+## Goals for Today
+
+Economics - Question of the Day
+
+* How does the sale price of residential property change based on various factors?
+
+### What things will affect the property value?
+
+## Goals for Today
+
+* Determinants of property values
+    + Size of house (square footage)
+    + Size of property
+    + Higher floors vs lower floors
+    + Quality of local schools
+    + Number of bedrooms and bathrooms
+    + Neighborhood location (metro, restaurants, library)
+    
+## Goals for Today
+
+Programming - R
+
+* Reviewing for-loops and if/else Statements
+* Introduction to stringr
+* Combining data using `bindrows`, `%in%`, and `join` functions
+* Cleaning data
+* Effective graphics for data visualization
+
+## If/Else Statements: Introduction
+* We have previously used `ifelse()` to make decisions about recoding our variables with `mutate`
+* If/else statements work in a similar way
+* In R, a basic if/else statement takes the following form:
+```{r, eval=FALSE}
+if(logical argument){
+  ## code to be executed
+} else{
+  ## code to be executed
+}
+```
+
+## If/Else Statements: Example
+
+\centerline{\includegraphics[height=3in]{./Reference/if_else_statement.png}}
+
+## Evens and Odds Example
+* We will use the modulo operator (`%%`) to characterize numbers as even or odd
+* `%%` returns the remainder after division of the first argument by the second argument
+
+\scriptsize
+```{r, collapse=TRUE}
+# %% is the modulus operator 
+# We are finding the remainder!
+4 %% 1; 10 %% 4; 3 %% 2
+testNum <- 12
+if(testNum %% 2 == 0){
+  print(paste(testNum, "is EVEN"))
+} else{
+  # If the remainder after division by 2 is not 0 
+  # then it must be odd (right..?)
+  print(paste(testNum, "is ODD"))
+}
+```
+
+## If/Else Statements Combined with For-Loops
+* Let's characterize and record the numbers from 1 to 10 as even or odd
+
+\scriptsize
+```{r}
+evens <- numeric()
+odds <- numeric()
+
+for(i in seq(1, 10, by = 1)){
+  if(i %% 2 == 0){ # %% is the modulus operator 
+                   # --- we are finding the remainder!
+    evens <- c(evens, i)
+  } else{
+    odds <- c(odds, i)
+  } }
+
+evens
+odds
+```
+
+## In-Class Exercise: If/Else Statements
+* Given the following grade, use an if/else statement to determine if the student passed or failed
+    + **(A passing grade is greater than or equal to 60)**
+```{r}
+student_grade <- 71
+```
+**Return a correct statement that the student passed or failed**
+
+```{r, , echo = T, eval = F}
+if(             ){
+  print("     ")
+} else {
+  print("     ")
+}
+```
+
+## Else-if statements: Introduction
+* We aren't limited to choosing between two conditions
+* Similar to `case_when()`, else-if lets us make multiple decisions
+    + provides us with even more flexibility
+* Checks each condition one by one
+    + check the first condition, if false then it moves on to the the next one
+* **Else catches everything that does not meet the previous criteria** so be careful when coding or deciding what to include
+
+## Else-if statements: Example
+* Here's an example of assigning survey numerical responses to genders.
+
+\scriptsize
+```{r}
+response_list <- c(0,1,2,2,0,1,2,1,0,2,2,1,1,1,2,1,0)
+female <- 0; male <- 0; other <- 0
+
+for(person in response_list){
+  if(person == 1) {
+    male <- male + 1
+  } else if (person == 2){
+    female <- female + 1
+  } else {
+    other <- other + 1
+  }
+}
+survey_genders <- data.frame(male,female,other)
+survey_genders
+```
+
+## Else-if statements: Assigning Grades - In-Class Exercise
+
+* You've been given a list of test scores that you want to categorize into letter grades
+* Use if else statements to assign letters to the numeric grades
+    + A 90 - 100, B 80 - 89, C 70 - 79, D 60 - 69, F < 60
+
+\scriptsize
+```{r, eval=FALSE}
+test_scores <- c(85,55,100,67,73,92,94,99,87,89.3)
+
+# Initialize our vector
+letter_grades <-   
+
+for(grade in test_scores){
+  if(   >= 90){
+    letter_grades <- paste(letter_grades,"A")
+  } else if(   ) {
+    letter_grades <-    (            ,"B")
+  } else if
+    letter_grades <- 
+    else if 
+    
+  } else {
+    letter_grades <- paste(       "F")
+  }
+}
+letter_grades
+```
+
+
+## Reading in Data: Introduction
+
+* Before we can access our datasets we need to help R find them
+* We can create a vector of all the files in our data folder using the `list.files` function
+* **What sorts of files are in the folder?**
+
+\scriptsize
+```{r}
+## create a vector of dataset names
+temp_files <- list.files("./Data/")
+temp_files
+```
+
+## Reading in Data: Introduction
+
+\small
+
+* We need to be able to access these files, we'll need to tell R to look in the folder 'Data'
+      + Therefore, we should append 'data' onto the title using `paste0`
+      
+\scriptsize
+```{r}
+files <- paste0("./Data/", temp_files)
+files
+```
+
+\small
+
+* Now that we know the names of the files with the datasets, we need to decide which datasets are useful and which go together
+*  **What are the two major categories of files?**
+*  **How can we combine these files most effectively?**
+
+## Introduction to str_detect()
+* `str_detect()` is a function in the tidyverse package that can tell whether a string contains a certain word or phrase. The function returns:
+    + `TRUE` if the word you're looking for is in the string
+    + `FALSE` if the word you're looking for is *not* in the string
+    
+\footnotesize
+```{r}
+str_detect("property_redfin_01.csv", "property")
+str_detect("location_redfin_01.csv", "property")
+
+str_detect(c("property_redfin_01.csv", 
+             "location_redfin_01.csv"),
+           "location")
+```
+
+## Using str_detect
+* Using what we've learned about `str_detect`, let's create a vector that only includes location files.
+
+\scriptsize
+```{r}
+files[str_detect(files, "location")]
+```
+
+
+## Building our Dataset - In-Class Exercise
+
+\small
+
+* You will need to use for-loops and if-else statements to create two datasets, one dataset that includes all the 'location' data and one dataset that includes all the 'property' data. 
+    + Initialize two data frames to store all your new data: one data frame for the 'property data' and one for the 'location data'
+    + Create a for-loop that cycles through each csv in the folder and checks if it is a 'location' or 'property file'.
+    + If it's a property file, add (bind) the csv's data onto your property data frame
+    + If it's a location file, bind it into your location_data data frame. 
+**Hint(check out what the `bind_rows` function does.)**
+
+\tiny
+```{r, eval=FALSE}
+property_data <- data_frame() # initialize empty data frame for the property data
+ <- data_frame() # initialize empty data frame for the location data
+for(file in        ){
+    # You only want to have property data in the first dataset
+    if(str_detect(     ,"property")){ 
+         <- read_csv(   )
+        property_data <- bind_rows(property_data, )
+    } 
+  # Now let's combine location data into a different dataset
+  else if(str_detect(      , "location")){ 
+    }
+}
+```
+
+
+```{r, include = FALSE}
+property_data <- data_frame() # initialize empty data frame
+location_data <- data_frame() # initialize empty data frame
+
+for(file in files){
+# this is a property file, add to property_data
+    if(str_detect(file, "property")){ 
+        data <- read_csv(file)
+        property_data <- bind_rows(property_data, data)
+    } 
+  # location file
+  else if(str_detect(file, "location")){ 
+        data <- read_csv(file)
+        location_data <- bind_rows(location_data, data)
+    }
+}
+```
+
+
+## Overview of the Data
+
+* Let's take a look at the variables in our two dataframes - property data and location data
+* **What does the property data do? What does the location data do?**
+* The good news is that we have much of the data we need, the bad news is that the data is split between location information and price information
+* **What piece of information is available in both datasets?**
+* We want to combine these two datasets around that common piece of information
+
+## Comparing our Datasets
+
+* Harnessing the power of the `%in%` function
+
+\scriptsize
+```{r}
+vec1 <- c("green", "yellow", "dog", "teal", "violet", "beige", "cat", "red", "horse", "orange")
+vec2 <- c("yellow", "red", "blue", "purple", "green", "orange")
+# What does the %in% function show us?
+vec1 %in% vec2
+
+# Where are the words that overlap across vectors?
+# Where are the words in vector 1 that appear in vector 2?
+which(vec1 %in% vec2) 
+
+# How do we return the names of the elements that appear in both vectors?
+vec1[vec1 %in% vec2] 
+```
+
+## Where to Combine the Data
+
+* Using our `%in%` function, let's find what variable(s) occur(s) in **both** our property and location datasets.
+* We'll save the result as 'overlap', which is a variable we can use for our next step.
+
+\scriptsize
+```{r, echo = TRUE}
+property_names <- names(property_data)
+location_names <- names(location_data)
+
+# What variable exists in both datasets?
+property_names %in% location_names
+
+overlap <- property_names[property_names %in% location_names]
+overlap
+
+
+```
+
+## "Joining" the Data: Introduction
+
+\small
+
+* Our URL column exists in both of the dataframes!
+* We only want houses that exist in both datasets
+* We call combining data frames "joining." Below are types of joins:
+* Which type of joining combines our dataframes so we only have properties with both location and property information?
+
+\centerline{\includegraphics[height=2.4in]{./Reference/joins.png}}
+
+
+
+
+## "Joining" the Data: In Practice
+
+\footnotesize
+```{r}
+joined_data <- inner_join(property_data,
+                         location_data,
+                         by = overlap)
+
+names(joined_data)
+```
+
+## "Joining" the Data: Additional Notes
+
+* Success! Now we have one dataset with all of our housing data
+* Note - It is also possible to perform a `join` where the columns we are matching in each table do not have the same name using the 'by' argument: by = c("name1" = "name2").
+* Similarly, it is also possible to `join` based on multiple columns: by = c(column1, column2, etc...)
+
+## Examining the Data
+
+* Now we can examine the data to check for any problems.
+* **What are some problems you see in terms of usability for this data?**
+```{r include = F, eval = F}
+View(joined_data)
+```
+
+## Examining the Data: Potential Problems
+
+* price column - USD in front of the numbers
+* propertytype column - has "propertytype" in front of every observation
+* city_state column - state is inconsistent (va, VA, Virginia) and unwanted states
+* lat_lon column - & in the middle of the string
+* zip_code column - extra zeros
+* sold.dates, list.date columns - dates are not consistent
+
+## Cleaning the Data: Why We Do It
+* If we try to make a plot without cleaning up our data...it doesn't work too well
+
+```{r echo= FALSE, fig.width=4, fig.height=2}
+joined_data %>% 
+    ggplot(aes(x = SQUARE.FEET, y = PRICE)) +
+    geom_point()
+```
+
+## Cleaning the Data: Price Column
+* Let's start by looking at our price data more closely
+
+\scriptsize
+```{r}
+head(joined_data$PRICE)
+```
+
+\normalsize
+
+* There's a USD in front of each number of the column
+* What class of variable is the price column?
+
+## Cleaning the Data: Price Column
+
+* How can we fix this problem for a character variable? What type of method could we use?
+
+## Cleaning the Data: Price Column
+
+* One way we could eliminate the USD is by replacing the USD with nothing, "" (this would be the same as removing it).
+* Try using the str_replace function to modify the string "USD40000" to be "40000"
+
+```{r eval = T, echo = T}
+str_replace("USD40000", "USD", "")
+```
+
+## Cleaning the Data: Price Column
+
+* Let's mutate the price column to remove "USD" from the character string
+
+\scriptsize
+```{r eval = T, echo = T, results = F}
+joined_data <- joined_data %>% 
+    mutate(PRICE = str_replace(PRICE, "USD", ""))
+head(joined_data$PRICE)
+```
+
+## Cleaning the Data: A Second Attempt at Plotting
+
+* Let's redo the plot!
+```{r, echo= FALSE, fig.width=4.5, fig.height=2.5}
+joined_data %>% 
+    ggplot(aes(x = SQUARE.FEET, y = PRICE)) +
+    geom_point() +
+    labs(title = "Relationship between price and home size",
+         y = "USD",
+         x = "Sq. Ft.",
+         caption = "Data from Redfin")
+```
+
+## Cleaning the Data: Reclassifying Columns and Removing N/As - In-Class Exercise
+* We still have a problem, we forgot to convert our PRICE column to be class numeric!
+* We also currently have a warning about missing values -- what should we do about those?
+* You should: 
+    + Convert the price column to be numeric
+    + Remove any missing values from the price and square feet columns
+    + Then replot and see how it looks
+  
+## Cleaning the Data: Reclassifying Columns and Removing N/As - In-Class Exercise
+
+\scriptsize
+```{r, eval= FALSE, fig.width=4.5, fig.height=2.5}
+joined_data <- joined_data %>% 
+    filter(!is.na(      ), !is.na(         )) %>%
+    mutate(PRICE = as.numeric(     ))
+
+# Now make the plot
+joined_data %>% 
+    ggplot(aes(x =      , y =      )) +
+    geom_point() +
+    #Note that the scale_y_continuous makes sure we don't get expotentials!
+    scale_y_continuous("USD", labels = dollar) + 
+    labs(title = 
+           "Price vs. Home Size",
+         y = ,
+         x = ,
+         caption = "Data from Redfin")
+```
+    
+\normalsize
+
+* What is the relationship between Sq Ft and home price?
+
+```{r, include = FALSE}
+joined_data <- joined_data %>% 
+    filter(!is.na(PRICE), !is.na(SQUARE.FEET)) %>%
+    mutate(PRICE = as.numeric(PRICE))
+
+```
+
+
+
+
+## Understanding the Data: Property Type and Price
+
+* What about the relationship between property type (apt, single family house, condo, etc.) and price?
+* Let's produce a table and a bar plot of the average price per square foot by property type.
+
+
+## Cleaning the Data: Property Type - In-Class Exercise
+
+* Let's clean the property type column
+* Check out the PROPERTY.TYPE column and use `str_replace` to fix it
+
+```{r, eval = F}
+joined_data <-         %>% 
+    mutate(PROPERTY.TYPE = str_replace(          ,
+    "propertytype:",   ))
+```
+
+
+\scriptsize
+```{r, include = FALSE}
+joined_data <- joined_data %>% 
+    mutate(PROPERTY.TYPE = str_replace(
+      PROPERTY.TYPE, "propertytype:", ""))
+```
+
+
+## Understanding the Data: Property Price/Sq Ft Table
+* Let's create a table of average price per square foot by property type
+
+\scriptsize
+```{r}
+type_price <- joined_data %>% 
+    group_by(PROPERTY.TYPE) %>% 
+    summarise(price = mean(PRICE/SQUARE.FEET, na.rm = T))
+
+type_price
+```
+
+## Understanding the Data: Property Price/Sq Ft Graph
+* Now let's check out a graph. This is obviously not a production-quality graph, just something for our reference.
+
+* How are the colors defined in the graph?
+
+```{r, echo = FALSE}
+type_price %>% 
+            ggplot(aes(x = PROPERTY.TYPE, 
+                       y = price, 
+                       fill = PROPERTY.TYPE)) +
+            geom_bar(stat = "identity") +
+            scale_y_continuous("USD", labels = dollar) +
+            scale_fill_discrete(guide = F) + # get rid of the fill legend
+            theme(axis.text.x = element_text(angle = 20, hjust= 1, vjust = 1))
+```
+
+## Understanding the Data: Data Challenges
+
+* City/state is another variable that might impact home sale price... Why?
+
+```{r}
+unique(joined_data$CITY_STATE)
+```
+* What issues do we have with the city_state variable?
+
+## Cleaning the Data: String Split
+
+* We can use the `str_split_fixed` function to alter our string (or vector of strings) using a 'pattern'
+* The function returns the peices of the string after splitting based on your 'pattern', which could be a word, symbol, or number of characters.
+
+\scriptsize
+```{r}
+# We have three arguments, what do they do?
+strings <- str_split_fixed("United States of America", "of", n = 2)
+strings
+
+class(strings)
+```
+
+## Cleaning the Data: String Split
+
+* We told R to split into two pieces (n = 2), so we got two columns in return.
+* If we want to get back to individual elements, we can subset the matrix using brackets.
+
+```{r}
+strings[1, 1] # first row, first column
+strings[1, 2] # first row, second column
+```
+
+## Cleaning the Data: String Split
+
+* Let's test it out with something closer to our actual use case.
+* Note that we're splitting along the comma and a space, which will remove both!
+
+```{r}
+str_split_fixed("Arlington, Virginia", ", ", n = 2)
+```
+
+## Cleaning the Data: String Split - In-Class Exercise
+
+* Use what we just learned to mutate the city_state column and create separate city and state columns.
+
+\scriptsize
+```{r, eval = FALSE}
+joined_data <-       %>% 
+    mutate(CITY = str_split_fixed(CITY_STATE,   )[1, 1],
+           STATE =     (       )[1, 2])
+
+joined_data %>% select(CITY_STATE, CITY, STATE) %>% head
+```
+
+
+```{r, include = FALSE}
+joined_data <- joined_data %>% 
+    mutate(CITY = str_split_fixed(CITY_STATE, ", ", n = 2)[,1],
+           STATE = str_split_fixed(CITY_STATE, ", ", n = 2)[, 2])
+
+joined_data %>% select(CITY_STATE, CITY, STATE) %>% head
+```
+
+## Cleaning the Data: State Data
+
+* We're not done yet. Let's take another look at the state column and see what types of responses exist
+
+\scriptsize
+```{r}
+unique(joined_data$STATE)
+```
+
+\normalsize
+* What do you think we need to do to further clean this column?
+
+## Cleaning the Data: Capitalizing States
+
+* The function `str_to_upper` will convert all lower case letter to upper case ones
+
+\scriptsize
+```{r}
+str_to_upper("va")
+```
+
+* We'll use this function to mutate the state column to upper case
+
+\scriptsize
+```{r}
+joined_data <- joined_data %>% 
+    mutate(STATE = str_to_upper(STATE))
+
+unique(joined_data$STATE)
+```
+
+## Cleaning the Data: Abbreviating States - In-Class Exercise
+* Now we want to change "VIRGINIA" to "VA" in the column to make the label consistent
+* We've already used this function! Go back and find the function you need to make that change
+
+\scriptsize
+```{r, eval = F}
+joined_data <- joined_data %>% 
+    mutate(STATE =            (     , "VIRGINIA",    ))
+```
+
+\scriptsize
+```{r "VIRGINIA ANSWER", include = FALSE}
+joined_data <- joined_data %>% 
+    mutate(STATE = str_replace(STATE, "VIRGINIA", "VA"))
+```
+
+
+## Cleaning the Data: Removing Additional States
+
+* The last thing we need to do is toss out the rows with MICHIGAN and COLORADO since we only want DMV data
+* Use the `%in%` function to filter only rows with VA, DC, or MD in them.
+
+\scriptsize
+```{r, collapse = TRUE}
+joined_data <- joined_data %>% 
+    filter(STATE %in% c("VA", "DC", "MD"))
+
+unique(joined_data$STATE)
+```
+
+## Plotting the Data: Price by State
+* Let's find out the average prices by state for our dataset
+
+\scriptsize
+```{r, eval = FALSE}
+state_average <- joined_data %>% group_by(STATE) %>% 
+    summarise(price = mean(PRICE/SQUARE.FEET, na.rm = T))
+
+state_average_plot <- state_average %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    geom_bar(stat = "identity", width = 0.5) + 
+    labs(x = NULL, # What does this do?
+         y = "USD/Sq ft",
+         title = "Average price for DC Home sales",
+         caption = "Data from Redfin") 
+
+state_average_plot
+```
+
+## Plotting the Data: Price by State
+* I want to have a larger plot title and have it centered
+* How can we do that? Would we use a data-related dimension or an aesthetic option?
+
+\scriptsize
+```{r, echo = FALSE}
+state_average <- joined_data %>% group_by(STATE) %>% 
+    summarise(price = mean(PRICE/SQUARE.FEET, na.rm = T))
+
+state_average_plot <- state_average %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    geom_bar(stat = "identity", width = 0.5) + 
+    labs(x = NULL, # What does this do?
+         y = "USD/Sq ft",
+         title = "Average price for DC Home sales",
+         caption = "Data from Redfin") 
+
+state_average_plot
+```
+
+## Plotting the Data: Price by State
+* We can use the `theme()` function to alter elements of the graph.
+* What other textual elements can we alter in this graph?
+
+\scriptsize
+```{r, fig.width=4, fig.height=2}
+state_average_plot +
+    theme(plot.title = 
+            element_text(size = 14, hjust = .5, color = "Red"))
+```
+
+## Plotting the Data: Appearance Options
+
+* We can use `element_text` to control any text on our graph, including the title, axis labels, legend, etc. `element_text` allows us to set:
+
+    + font family (Times New Roman, Arial, etc...) 
+    + font size (10, 12, 14, etc...)  
+    + font face (bold, italic) 
+    + color 
+    + hjust (horizontal adjustment) 
+    + vjust (vertical adjustment)
+    + angle  
+    + other aspects that impact the display of text.
+
+## Plotting the Data: Property Type
+
+\scriptsize
+```{r, , eval = FALSE, fig.width=5, fig.height=3}
+state_proptype <- joined_data %>% 
+    group_by(PROPERTY.TYPE, STATE) %>% 
+    summarise(price = mean(PRICE/SQUARE.FEET, na.rm = T)
+
+plot <- state_proptype %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    geom_bar(stat = "identity") +
+    facet_wrap("PROPERTY.TYPE") +
+    labs(title = "Price by property type",
+         x = NULL,
+         y = "USD/Sq ft.",
+         caption = "Data from Redfin")
+
+plot + theme(plot.title =
+          element_text(face = "italic", size = 14, color = "Blue"),
+          axis.text.x = element_text(face = "bold", color = "green4"),
+          strip.text.x = element_text(size = 6, color = "black"),
+          plot.background = element_rect(fill = "beige", color = "red"),
+          panel.background = element_rect(fill = "cadetblue1", 
+                                          color = "black", linetype = 3))
+              
+              
+```
+
+## Plotting the Data: Property Type
+\normalsize
+```{r, echo = FALSE, fig.width=4.5, fig.height=3}
+state_proptype <- joined_data %>% 
+    group_by(PROPERTY.TYPE, STATE) %>% 
+    summarise(price = mean(PRICE/SQUARE.FEET, na.rm = T)) 
+state_proptype %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    geom_bar(stat = "identity") +
+    facet_wrap("PROPERTY.TYPE") +
+    labs(title = "Price by property type",
+         x = NULL,
+         y = "USD/Sq ft.",
+         caption = "Data from Redfin") +
+    theme(plot.title = element_text(face = "italic", size = 14, color = "Blue"),
+          axis.text.x = element_text(face = "bold", color = "green4"),
+          strip.text.x = element_text(size = 6, color = "black"),
+          plot.background = element_rect(fill = "beige", color = "red"),
+          panel.background = element_rect(fill = "cadetblue1", 
+                                          color = "black", linetype = 3))
+              
+              
+```
+
+## Understanding the Graphic Appearance
+
+* We used `element_rect()` to adjust rectangular elements of the plot.
+* The main plot has a beige background with a red border.
+* We used the panel.background option to adjust elements of the area where the data is
+* What did the linetype argument do in our panel.background option?
+
+\scriptsize
+```{r, eval = FALSE, fig.width=5, fig.height=3}
+plot <- state_proptype %>% 
+    ggplot(aes(x = STATE, y = price, fill = STATE)) +
+    geom_bar(stat = "identity") +
+    facet_wrap("PROPERTY.TYPE") +
+    labs(title = "Price by property type",
+         x = NULL,
+         y = "USD/Sq ft.",
+         caption = "Data from Redfin")
+
+plot + theme(plot.title = element_text(face = "italic", size = 14, color = "Blue"),
+          axis.text.x = element_text(face = "bold", color = "green4"),
+          strip.text.x = element_text(size = 6, color = "black"),
+          plot.background = element_rect(fill = "beige", color = "red"),
+          panel.background = element_rect(fill = "cadetblue1", 
+                                          color = "black", linetype = 3))
+              
+              
+```
+
+## Understanding the Data: Price per Lot Size
+
+* Perhaps using the price per square foot is not the best method of analysis.
+* When a property is sold the surrounding land around the house will likely affect the selling price.
+* Let's work on making a plot of price/lot size
+
+## Understanding the Data: Price per Lot Size
+
+* We'll start by looking at the head of the data
+```{r, echo = FALSE}
+joined_data %>% select(PRICE, SQUARE.FEET, LOT.SIZE) %>% head()
+```
+* We have a lot of NA values. Why is that?
+
+## Understanding the Data: Price per Lot Size - In-Class Exercise
+
+\small
+
+* Let's get rid of the `NA` values by replacing them with square footage
+* We'll create a new column called Property Size that equals either lot size or square feet
+      + Use an `ifelse()` statement in our mutate, where we test whether lot size is `NA`
+      + If lot size is `NA`, use square feet. Otherwise, use lot size
+* Next we will summarize our data by price per foot of property size. 
+      + We want to group by property type and state!
+
+\scriptsize
+```{r, eval = FALSE}
+joined_data <-         %>% 
+    mutate(PROPERTY.SIZE = ifelse(is.na(       ), SQUARE.FEET,        ))
+
+# Now we can find our average
+lot_state_data <- joined_data %>% 
+    group_by(          ) %>% 
+    summarise(price = mean(                 , na.rm = T))
+
+head(lot_state_data)
+```
+
+\scriptsize
+```{r, include = FALSE}
+joined_data <- joined_data %>% 
+    mutate(PROPERTY.SIZE = ifelse(is.na(LOT.SIZE), SQUARE.FEET, LOT.SIZE))
+
+# Now we can find our average
+lot_state_data <- joined_data %>% 
+    group_by(PROPERTY.TYPE, STATE) %>% 
+    summarise(price = mean(PRICE/PROPERTY.SIZE, na.rm = T))
+
+head(lot_state_data)
+```
+
+
+## Understanding the Data: Culminating Exercise
+* Make a plot like the one we just did but using our new price/property.size variable with some modifications -
+    + **Make your title centered (using hjust) and green**
+    + **Make your panel background white with a red border**
+
+```{r "Lot size plot answer", eval = F, include = F}
+lot_state_data %>% 
+    ggplot(aes(x =      , y =     , fill =     )) +
+    facet_wrap("PROPERTY.TYPE") +
+    geom_bar(stat = "identity", width = 0.5) +
+    labs(x = NULL,
+         title = "      ",
+         caption = "           ",
+         y = "         ") +
+    theme(plot.title = element_text(hjust = , color =        ),
+          strip.text.x = element_text(size = 6, color = "black"),
+          panel.background = element_rect(             ))
+```
